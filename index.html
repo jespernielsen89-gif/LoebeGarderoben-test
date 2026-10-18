@@ -1,1 +1,80 @@
-<h1>Test Site</h1>
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LøbeGarderoben</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏃 LøbeGarderoben</h1>
+      <p>Din AI-drevne løbeassistent</p>
+    </header>
+
+    <!-- Vejr og Match -->
+    <section class="card">
+      <h2>Dagens Vejr & Match</h2>
+      <button id="btn-location" class="action-btn">📍 Brug min GPS til vejr</button>
+      
+      <div id="weather-info" class="hidden">
+        <p>Temperatur: <span id="temp">--</span>°C (Føles som: <span id="feels-like">--</span>°C)</p>
+        <p>Vind: <span id="wind">--</span> m/s</p>
+
+        <!-- Nye parametre: Person og Rute -->
+        <div class="parameters-grid" style="margin-top: 15px; display: grid; gap: 10px; text-align: left;">
+          <div>
+            <label for="user-type" style="font-weight: bold; font-size: 14px;">👤 Persontype:</label>
+            <select id="user-type" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; margin-top: 4px;">
+              <option value="normal">Normal / Standard</option>
+              <option value="cold">Fryser let 🥶 (+3°C følt varmebehov)</option>
+              <option value="warm">Varmblodet 🔥 (-3°C følt varmebehov)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="route-type" style="font-weight: bold; font-size: 14px;">🛣️ Rutens karakter / Intensitet:</label>
+            <select id="route-type" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; margin-top: 4px;">
+              <option value="standard">Almindelig tur / By / Sti</option>
+              <option value="sheltered">Skov / Læ (Mindre vind)</option>
+              <option value="windy">Åbent terræn / Kyst (Masser af vind)</option>
+              <option value="intense">Høj intensitet / Interval (-2°C varmebehov)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="outfit-recommendation" class="hidden" style="margin-top: 15px;">
+        <h3>Anbefalet Outfit:</h3>
+        <ul id="outfit-list"></ul>
+      </div>
+    </section>
+
+    <!-- Scan nyt tøj -->
+    <section class="card">
+      <h3>📸 Scan nyt løbetøj</h3>
+      <p>Tag et billede af dit tøj – AI'en identificerer mærke og egenskaber automatisk.</p>
+      
+      <label for="camera-input" class="action-btn" style="cursor: pointer; display: inline-block; text-align: center;">
+        📷 Vælg Billede / Tag Foto
+      </label>
+      <input type="file" id="camera-input" accept="image/*" style="display: none;">
+      
+      <p id="scan-status" style="margin-top: 10px; font-size: 14px; color: #555;"></p>
+    </section>
+
+    <!-- Mit Klædeskab -->
+    <section class="card">
+      <h3>👕 Mit Klædeskab</h3>
+      <div id="wardrobe-list">
+        <p class="empty-msg">Henter tøj fra databasen...</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
