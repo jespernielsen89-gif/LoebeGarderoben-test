@@ -10,38 +10,44 @@
 <body>
 
   <div class="app-container">
+    <!-- APP HEADER -->
     <header class="app-header">
-      <h1>🏃 LøbeGarderoben <span class="badge-v2">v2.0</span></h1>
+      <div class="logo-badge">🏃 LøbeGarderoben <span class="badge-v2">v2.0</span></div>
       <p class="subtitle">Din intelligente, personlige løbe-påklædningsassistent</p>
     </header>
 
     <!-- VEJR & PARAMETRE -->
-    <section class="card">
-      <h2>1. Vejr & Betingelser</h2>
-      <button id="btn-location" class="btn-primary">📍 Hent lokalt vejr via GPS</button>
+    <section class="card hero-card">
+      <div class="card-title-row">
+        <h2>1. Vejr & Betingelser</h2>
+      </div>
       
+      <button id="btn-location" class="btn-primary btn-glow">
+        📍 Hent lokalt vejr via GPS
+      </button>
+
       <div id="weather-info" class="weather-grid hidden">
         <div class="weather-stat">
           <span class="stat-label">Temperatur</span>
-          <span class="stat-value"><span id="temp">--</span>°C</span>
+          <span class="stat-value"><span id="temp">--</span>°</span>
         </div>
         <div class="weather-stat">
           <span class="stat-label">Føles som</span>
-          <span class="stat-value"><span id="feels-like">--</span>°C</span>
+          <span class="stat-value"><span id="feels-like">--</span>°</span>
         </div>
         <div class="weather-stat">
           <span class="stat-label">Vind / Stød</span>
-          <span class="stat-value"><span id="wind">--</span> m/s</span>
+          <span class="stat-value"><span id="wind">--</span> <small>m/s</small></span>
         </div>
         <div class="weather-stat">
           <span class="stat-label">Nedbør</span>
-          <span class="stat-value"><span id="rain">--</span> mm</span>
+          <span class="stat-value"><span id="rain">--</span> <small>mm</small></span>
         </div>
       </div>
 
       <div class="parameters-grid">
         <div class="param-group">
-          <label for="user-type">Kuldefølsomhed:</label>
+          <label for="user-type">Kuldefølsomhed</label>
           <select id="user-type" class="input-select">
             <option value="normal">Normal (Standard)</option>
             <option value="cold">Kuldeskær (Fryser nemt)</option>
@@ -49,7 +55,7 @@
           </select>
         </div>
         <div class="param-group">
-          <label for="route-type">Tur-type:</label>
+          <label for="route-type">Tur-type</label>
           <select id="route-type" class="input-select">
             <option value="standard">Almindelig løbetur</option>
             <option value="intense">Intens / Høj kadence (Intervaller)</option>
@@ -62,7 +68,10 @@
 
     <!-- ANBEFALING -->
     <section id="outfit-recommendation" class="card hidden">
-      <h2>2. Dagens Lag-på-Lag Anbefaling</h2>
+      <div class="card-title-row">
+        <h2>2. Dagens Lag-på-Lag Outfit</h2>
+      </div>
+      
       <div id="outfit-list" class="outfit-cards-container"></div>
 
       <!-- Quick Feedback -->
@@ -83,7 +92,10 @@
 
     <!-- AI CAMERA SCANNER & KLÆDESKAB -->
     <section class="card">
-      <h2>3. Mit Klædeskab</h2>
+      <div class="card-title-row">
+        <h2>3. Mit Klædeskab</h2>
+      </div>
+
       <div class="scan-upload-box">
         <label for="camera-input" class="btn-scan">
           📷 Tilføj nyt tøj med AI Scanner
