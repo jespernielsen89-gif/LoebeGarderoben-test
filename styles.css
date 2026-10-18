@@ -1,97 +1,359 @@
+/* ==========================================
+   LøbeGarderoben v2.0 - Complete Stylesheet
+   ========================================== */
+
+/* --- ROOT VARIABLES & RESETS --- */
 :root {
-  --primary: #2563eb;
-  --secondary: #059669;
-  --bg: #f8fafc;
+  --primary: #10b981;          /* Frisk grøn løbe-energi */
+  --primary-hover: #059669;
+  --secondary: #3b82f6;        /* Blå vejr/vind farve */
+  --secondary-hover: #2563eb;
+  --danger: #ef4444;
+  --background: #f8fafc;
   --card-bg: #ffffff;
-  --text: #0f172a;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
-  margin: 0;
+  background-color: var(--background);
+  color: var(--text-main);
+  line-height: 1.5;
   padding: 16px;
   display: flex;
   justify-content: center;
+  min-height: 100vh;
 }
 
 .app-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 500px; /* Perfekt bredde til mobil & tablet */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-header {
+/* --- HEADER --- */
+.app-header {
   text-align: center;
-  margin-bottom: 24px;
+  padding: 8px 0;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  color: var(--primary);
+.app-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-header p {
-  margin: 4px 0 0;
-  color: #64748b;
-  font-size: 0.95rem;
+.badge-v2 {
+  background: linear-gradient(135deg, #ef4444, #f43f5e);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* --- CARDS & CONTAINERS --- */
 .card {
   background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius);
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .card h2 {
-  margin-top: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 2px;
 }
 
-button {
-  width: 100%;
-  padding: 12px;
+/* --- BUTTONS & INPUTS --- */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  width: 100%;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-secondary { background: var(--secondary); color: white; }
-button:hover { opacity: 0.9; }
+.btn-primary:active {
+  transform: scale(0.98);
+  background-color: var(--primary-hover);
+}
 
-.hidden { display: none; }
-.weather-info { margin-top: 16px; }
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
 
-.outfit-box {
-  background: #eff6ff;
-  border-left: 4px solid var(--primary);
+.btn-secondary:hover {
+  background-color: var(--secondary-hover);
+}
+
+.input-select, .input-text {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-select:focus, .input-text:focus {
+  border-color: var(--primary);
+}
+
+/* --- VEJR GRID --- */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  background-color: #f1f5f9;
   padding: 12px;
-  margin-top: 16px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 10px;
+}
+
+.weather-stat {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--text-main);
+}
+
+.parameters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.param-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* --- LAG-PÅ-LAG OUTFIT CARDS --- */
+.outfit-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.outfit-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.outfit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.layer-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.match-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #059669;
+  background-color: #d1fae5;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.match-badge.fallback {
+  color: #d97706;
+  background-color: #fef3c7;
+}
+
+.outfit-card h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* --- TAGS & BADGES --- */
+.tags-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.tag-orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.tag-blue {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* --- QUICK FEEDBACK --- */
+.feedback-card {
+  background: #fafafa;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+  margin-top: 6px;
+}
+
+.fb-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-fb {
+  flex: 1;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.btn-fb:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-fb:active {
+  transform: scale(0.96);
+}
+
+.feedback-comment-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* --- KLÆDESKAB & SCANNER --- */
+.scan-upload-box {
+  text-align: center;
+}
+
+.btn-scan {
+  display: block;
+  background-color: #0284c7;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-scan:hover {
+  background-color: #0369a1;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .wardrobe-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
-  margin-top: 12px;
 }
 
-.wardrobe-item {
-  background: #f1f5f9;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-}
-
-.status-msg {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: #2563eb;
-}
+.wardrobe-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-
