@@ -1,33 +1,30 @@
 /* ==========================================
-   LøbeGarderoben v2.0 - Complete Stylesheet
+   LøbeGarderoben v2.0 - Ultra Modern Theme
    ========================================== */
 
-/* --- ROOT VARIABLES & RESETS --- */
 :root {
-  --primary: #10b981;          /* Frisk grøn løbe-energi */
-  --primary-hover: #059669;
-  --secondary: #3b82f6;        /* Blå vejr/vind farve */
-  --secondary-hover: #2563eb;
-  --danger: #ef4444;
-  --background: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --primary: #10b981;
+  --primary-gradient: linear-gradient(135deg, #10b981, #059669);
+  --secondary: #3b82f6;
+  --accent: #8b5cf6;
+  --bg-main: #0f172a;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --radius: 16px;
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-  background-color: var(--background);
+  background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.5;
   padding: 16px;
@@ -38,148 +35,135 @@ body {
 
 .app-container {
   width: 100%;
-  max-width: 500px; /* Perfekt bredde til mobil & tablet */
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* --- HEADER --- */
+/* HEADER */
 .app-header {
   text-align: center;
-  padding: 8px 0;
+  padding: 12px 0 4px 0;
 }
 
-.app-header h1 {
+.logo-badge {
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  letter-spacing: -0.5px;
 }
 
 .badge-v2 {
-  background: linear-gradient(135deg, #ef4444, #f43f5e);
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
   color: #ffffff;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 2px 8px;
   border-radius: 20px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .subtitle {
   font-size: 0.85rem;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-/* --- CARDS & CONTAINERS --- */
+/* CARDS */
 .card {
   background: var(--card-bg);
   border-radius: var(--radius);
-  padding: 18px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  padding: 20px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-.card h2 {
-  font-size: 1.1rem;
+.card-title-row h2 {
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text-main);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-  margin-bottom: 2px;
+  color: #ffffff;
 }
 
-/* --- BUTTONS & INPUTS --- */
+/* BUTTONS & INPUTS */
 .btn-primary {
-  background-color: var(--primary);
+  background: var(--primary-gradient);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 12px;
+  padding: 14px 18px;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   width: 100%;
-  transition: background-color 0.2s, transform 0.1s;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-primary:active {
   transform: scale(0.98);
-  background-color: var(--primary-hover);
 }
 
 .btn-secondary {
   background-color: var(--secondary);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-  background-color: var(--secondary-hover);
 }
 
 .input-select, .input-text {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
   font-size: 0.9rem;
-  background-color: #ffffff;
-  color: var(--text-main);
+  background-color: #0f172a;
+  color: #ffffff;
   outline: none;
-  transition: border-color 0.2s;
 }
 
-.input-select:focus, .input-text:focus {
-  border-color: var(--primary);
-}
-
-/* --- VEJR GRID --- */
+/* VEJR GRID */
 .weather-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  background-color: #f1f5f9;
+  background-color: #0f172a;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
 }
 
 .weather-stat {
-  background: white;
-  padding: 10px;
-  border-radius: 8px;
+  background: #1e293b;
+  padding: 12px;
+  border-radius: 10px;
   text-align: center;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--card-border);
 }
 
 .stat-label {
   display: block;
   font-size: 0.75rem;
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
 .stat-value {
   font-weight: 800;
-  font-size: 1.2rem;
-  color: var(--text-main);
+  font-size: 1.3rem;
+  color: #ffffff;
 }
 
 .parameters-grid {
@@ -190,130 +174,125 @@ body {
 
 .param-group label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
 }
 
-/* --- LAG-PÅ-LAG OUTFIT CARDS --- */
+/* OUTFIT CARDS */
 .outfit-cards-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .outfit-card {
-  background: #ffffff;
-  border: 1px solid var(--border);
+  background: #0f172a;
+  border: 1px solid var(--card-border);
   border-left: 4px solid var(--primary);
-  border-radius: 8px;
-  padding: 12px 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 14px 16px;
 }
 
 .outfit-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .layer-badge {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .match-badge {
   font-size: 0.7rem;
-  font-weight: 700;
-  color: #059669;
-  background-color: #d1fae5;
-  padding: 2px 8px;
-  border-radius: 12px;
+  font-weight: 800;
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.15);
+  padding: 3px 8px;
+  border-radius: 20px;
 }
 
 .match-badge.fallback {
-  color: #d97706;
-  background-color: #fef3c7;
+  color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
 }
 
 .outfit-card h4 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-/* --- TAGS & BADGES --- */
+/* TAGS */
 .tags-row {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .tag {
   font-size: 0.7rem;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .tag-orange {
-  background: #ffedd5;
-  color: #c2410c;
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
 }
 
 .tag-blue {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
 }
 
-/* --- QUICK FEEDBACK --- */
+/* QUICK FEEDBACK */
 .feedback-card {
-  background: #fafafa;
-  border-top: 1px dashed var(--border);
-  padding-top: 12px;
-  margin-top: 6px;
+  background: #0f172a;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 8px;
 }
 
 .fb-title {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-align: center;
 }
 
 .feedback-buttons {
   display: flex;
   gap: 8px;
-  justify-content: center;
 }
 
 .btn-fb {
   flex: 1;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 4px;
+  background: #1e293b;
+  border: 1px solid var(--card-border);
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 10px 4px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.btn-fb:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
 }
 
 .btn-fb:active {
   transform: scale(0.96);
+  background: var(--primary);
 }
 
 .feedback-comment-row {
@@ -322,38 +301,70 @@ body {
   margin-top: 10px;
 }
 
-/* --- KLÆDESKAB & SCANNER --- */
-.scan-upload-box {
-  text-align: center;
-}
-
+/* KLÆDESKAB & SCANNER */
 .btn-scan {
   display: block;
-  background-color: #0284c7;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
   color: white;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
-.btn-scan:hover {
-  background-color: #0369a1;
-}
-
-.hidden-input {
-  display: none;
-}
+.hidden-input { display: none; }
 
 .wardrobe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
+  margin-top: 10px;
 }
 
 .wardrobe-card {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-
+  background: #0f172a;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.wardrobe-card-header strong {
+  font-size: 0.85rem;
+  color: #ffffff;
+}
+
+.category-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.status-msg {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.empty-msg {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px;
+  width: 100%;
+}
+
+.hidden { display: none !important; }
