@@ -34,7 +34,10 @@ async function ensureAuthenticated() {
     let { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
       const { data, error } = await supabaseClient.auth.signInAnonymously();
-      if (error) return null;
+      if (error) {
+        console.error("Anonym login fejl:", error);
+        return null;
+      }
       return data.user;
     }
     return session.user;
@@ -162,7 +165,7 @@ async function fetchWeather(position) {
   }
 }
 
-// === 3. INTELLIGENT LAG-PÅ-LAG ALGORITME (v2.0) ===
+// === 3. INTELLIGENT LAG-PÅ-LAG ALGORITME MED UNIQUES (Undgår dubletter) ===
 function updateMatch() {
   if (currentRawTemp === null) return;
 
@@ -194,34 +197,34 @@ function generateOutfitMatch(adjustedTemp, needWindproof, needRainproof) {
   else if (adjustedTemp < 18) targetWarmth = 2;
   else targetWarmth = 1;
 
-  // Bygger lag-på-lag struktur
-  const layers = [];
+  // Hold styr på hvilke tøj-ID'er der allerede er brugt i outfit'et
+  let usedItemIds = new Set();
 
-  // 1. Baselayer (Inderst)
+  const layers = [];
   layers.push({ layerName: 'Inderlag (Baselayer)', category: 'overdel', warmth: Math.min(targetWarmth, 3) });
 
-  // 2. Midlayer (Hvis meget koldt)
   if (adjustedTemp < 6) {
     layers.push({ layerName: 'Mellemlag (Isolerende)', category: 'overdel', warmth: 4 });
   }
 
-  // 3. Yderlag (Vind/Regnjakke hvis nødvendigt)
   if (needWindproof || needRainproof || adjustedTemp < 10) {
     layers.push({ layerName: 'Yderlag (Beskyttelse)', category: 'overdel', needWind: needWindproof, needRain: needRainproof });
   }
 
-  // 4. Underdel
   layers.push({ layerName: 'Ben / Underdel', category: 'underdel', warmth: targetWarmth });
 
-  // 5. Tilbehør (Koldt vejr)
   if (adjustedTemp < 8) {
     layers.push({ layerName: 'Tilbehør', category: 'tilbehør', warmth: targetWarmth });
   }
 
-  // Generer visuelle kort
   layers.forEach(layer => {
-    const matchedItem = findBestMatch(layer.category, layer.warmth || targetWarmth, layer.needWind, layer.needRain);
+    // Sender usedItemIds med ind, så vi ikke genbruger det samme stykke tøj
+    const matchedItem = findBestMatch(layer.category, layer.warmth || targetWarmth, layer.needWind, layer.needRain, usedItemIds);
     
+    if (matchedItem) {
+      usedItemIds.add(matchedItem.id); // Lås stykke tøj så det ikke bruges igen
+    }
+
     const card = document.createElement('div');
     card.className = 'outfit-card';
 
@@ -253,11 +256,11 @@ function generateOutfitMatch(adjustedTemp, needWindproof, needRainproof) {
   outfitBox.classList.remove('hidden');
 }
 
-function findBestMatch(category, targetWarmth, needWind, needRain) {
+function findBestMatch(category, targetWarmth, needWind, needRain, usedItemIds) {
   if (!userWardrobeItems || userWardrobeItems.length === 0) return null;
 
   let candidates = userWardrobeItems.filter(item => 
-    item.category && item.category.toLowerCase().includes(category)
+    item.category && item.category.toLowerCase().includes(category) && !usedItemIds.has(item.id)
   );
 
   if (candidates.length === 0) return null;
@@ -287,19 +290,22 @@ function getGenericFallback(layerName, warmth, wind, rain) {
   return "Løbehandsker / Pandebånd";
 }
 
-// === 4. AI CAMERA SCANNER ===
+// === 4. AI CAMERA SCANNER MED BILLED-KOMPRIMERING (IPHONE FIX) ===
 if (cameraInput) {
   cameraInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    scanStatus.innerText = "⏳ AI scanner og klassificerer dit tøj...";
+    scanStatus.innerText = "⏳ Behandler og komprimerer billede...";
 
     try {
       const currentUser = await ensureAuthenticated();
-      if (!currentUser) throw new Error("Autentificering fejlede.");
+      if (!currentUser) throw new Error("Kunne ikke godkende bruger til scanning.");
 
-      const base64Image = await convertToBase64(file);
+      // Komprimerer og konverterer billedet, så det ikke fejler på store iPhone-filer
+      const base64Image = await resizeAndConvertImage(file);
+
+      scanStatus.innerText = "⏳ AI scanner tøjet...";
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/bright-endpoint`, {
         method: "POST",
@@ -339,21 +345,53 @@ if (cameraInput) {
 
     } catch (err) {
       console.error("Scan fejl:", err);
-      scanStatus.innerText = "❌ Scanning fejlede: " + err.message;
+      scanStatus.innerText = "❌ Fejl: " + err.message;
     }
   });
 }
 
-function convertToBase64(file) {
+// Hjælpefunktion der skalerer store mobilbilleder ned før upload
+function resizeAndConvertImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Returnerer komprimeret JPEG i base64
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
   });
 }
 
-// === 5. QUICK FEEDBACK ===
+// === 5. QUICK FEEDBACK MED SIKRET USER_ID ===
 document.querySelectorAll('.btn-fb').forEach(button => {
   button.addEventListener('click', async (e) => {
     const rating = e.target.getAttribute('data-rating');
@@ -367,15 +405,20 @@ document.querySelectorAll('.btn-fb').forEach(button => {
       const userType = userTypeSelect ? userTypeSelect.value : 'normal';
       const routeType = routeTypeSelect ? routeTypeSelect.value : 'standard';
 
+      const insertData = {
+        rating: rating,
+        feels_like_temp: currentRawTemp,
+        user_type: userType,
+        route_type: routeType
+      };
+
+      if (currentUser) {
+        insertData.user_id = currentUser.id;
+      }
+
       const { data, error } = await supabaseClient
         .from('outfit_feedback')
-        .insert([{
-          user_id: currentUser ? currentUser.id : null,
-          rating: rating,
-          feels_like_temp: currentRawTemp,
-          user_type: userType,
-          route_type: routeType
-        }])
+        .insert([insertData])
         .select();
 
       if (error) throw error;
@@ -386,7 +429,7 @@ document.querySelectorAll('.btn-fb').forEach(button => {
 
     } catch (err) {
       console.error("Feedback-fejl:", err);
-      statusEl.innerText = "❌ Kunne ikke gemme feedback.";
+      statusEl.innerText = "❌ Kunne ikke gemme feedback (tjek RLS politikker).";
     }
   });
 });
