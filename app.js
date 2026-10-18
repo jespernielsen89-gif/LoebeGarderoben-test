@@ -77,20 +77,18 @@ async function loadWardrobe() {
       
       const warmthStars = '🔥'.repeat(item.warmth_level || 1);
       const windBadge = item.windproof ? '<span class="tag tag-blue">💨 Vindtæt</span>' : '';
-      const rainBadge = item.waterproof || item.sub_category?.toLowerCase().includes('regn') ? '<span class="tag tag-blue">🌧️ Vandafvisende</span>' : '';
+      const rainBadge = item.waterproof || (item.sub_category && item.sub_category.toLowerCase().includes('regn')) ? '<span class="tag tag-blue">🌧️ Vandafvisende</span>' : '';
 
       card.innerHTML = `
         <div class="wardrobe-card-header">
           <strong>${item.brand || 'Ukendt mærke'}</strong>
           <button class="btn-delete" onclick="deleteWardrobeItem('${item.id}')">🗑️</button>
         </div>
-        <div class="wardrobe-card-body">
-          <p class="category-title">${item.sub_category || item.category || 'Tøj'}</p>
-          <div class="tags-row">
-            <span class="tag tag-orange">${warmthStars}</span>
-            ${windBadge}
-            ${rainBadge}
-          </div>
+        <p class="category-title">${item.sub_category || item.category || 'Tøj'}</p>
+        <div class="tags-row">
+          <span class="tag tag-orange">${warmthStars}</span>
+          ${windBadge}
+          ${rainBadge}
         </div>
       `;
       wardrobeList.appendChild(card);
@@ -144,12 +142,17 @@ async function fetchWeather(position) {
     currentWindSpeed = current.wind_speed_10m;
     currentRain = current.rain || 0;
 
-    document.getElementById('temp').innerText = Math.round(current.temperature_2m);
-    document.getElementById('feels-like').innerText = Math.round(current.apparent_temperature);
-    document.getElementById('wind').innerText = Math.round(currentWindSpeed);
-    document.getElementById('rain').innerText = currentRain;
+    const tempEl = document.getElementById('temp');
+    const feelsEl = document.getElementById('feels-like');
+    const windEl = document.getElementById('wind');
+    const rainEl = document.getElementById('rain');
 
-    weatherInfo.classList.remove('hidden');
+    if (tempEl) tempEl.innerText = Math.round(current.temperature_2m);
+    if (feelsEl) feelsEl.innerText = Math.round(current.apparent_temperature);
+    if (windEl) windEl.innerText = Math.round(currentWindSpeed);
+    if (rainEl) rainEl.innerText = currentRain;
+
+    if (weatherInfo) weatherInfo.classList.remove('hidden');
     btnLocation.innerText = "🔄 Opdater vejr";
 
     updateMatch();
@@ -159,7 +162,7 @@ async function fetchWeather(position) {
   }
 }
 
-// === 3. INTELIGENT LAG-PÅ-LAG ALGORITME (v2.0) ===
+// === 3. INTELLIGENT LAG-PÅ-LAG ALGORITME (v2.0) ===
 function updateMatch() {
   if (currentRawTemp === null) return;
 
