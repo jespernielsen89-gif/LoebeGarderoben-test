@@ -52,7 +52,7 @@
         <div class="form-group half">
           <label for="sensitivity">Kuldefølsomhed</label>
           <select id="sensitivity">
-            <option value="frysending">Fryser nemt (+3°C)</option>
+            <option value="frysende">Fryser nemt (+3°C)</option>
             <option value="normal" selected>Normal (Standard)</option>
             <option value="varm">Har det nemt varmt (-3°C)</option>
           </select>
@@ -117,26 +117,14 @@
       <!-- Visuel SVG Runner Avatar -->
       <div id="runner-avatar-container" class="avatar-box hidden">
         <svg id="runner-svg" viewBox="0 0 200 300" width="140" height="210">
-          <!-- Cirkel baggrund -->
           <circle cx="100" cy="150" r="90" fill="#0f172a" stroke="#334155" stroke-width="2"/>
-          
-          <!-- Hoved & Ansigt -->
           <circle cx="100" cy="65" r="18" fill="#cbd5e1" id="svg-head"/>
-          <!-- Lue / Hovedbeklædning -->
           <path d="M 80 60 Q 100 40 120 60 Q 110 50 100 50 Q 90 50 80 60 Z" fill="#64748b" id="svg-hat" class="hidden"/>
-
-          <!-- Overkrop (Baselayer / Mid / Outer) -->
           <path d="M 75 90 L 125 90 L 135 150 L 65 150 Z" fill="#3b82f6" id="svg-torso"/>
-          
-          <!-- Arme -->
           <line x1="75" y1="95" x2="45" y2="130" stroke="#cbd5e1" stroke-width="10" stroke-linecap="round"/>
           <line x1="125" y1="95" x2="155" y2="130" stroke="#cbd5e1" stroke-width="10" stroke-linecap="round"/>
-
-          <!-- Ben / Tights -->
           <line x1="85" y1="150" x2="75" y2="220" stroke="#1e293b" stroke-width="12" stroke-linecap="round" id="svg-left-leg"/>
           <line x1="115" y1="150" x2="125" y2="220" stroke="#1e293b" stroke-width="12" stroke-linecap="round" id="svg-right-leg"/>
-
-          <!-- Sko -->
           <ellipse cx="70" cy="225" rx="8" ry="4" fill="#f59e0b"/>
           <ellipse cx="130" cy="225" rx="8" ry="4" fill="#f59e0b"/>
         </svg>
