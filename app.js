@@ -88,23 +88,28 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr (GPS + Manuel By-søgning)
+// 2. Geolocation & Vejr
 function getLocationWeather() {
+  const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
-    document.getElementById('city-search').value = "Henter din GPS lokation...";
+    cityInput.value = "Henter din GPS lokation...";
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        document.getElementById('city-search').value = "Nuværende GPS Lokation";
-        fetchWeather(position);
+        cityInput.value = "Nuværende GPS Lokation";
+        fetchWeather(position.coords.latitude, position.coords.longitude);
       }, 
-      () => {
+      (error) => {
+        console.warn("GPS-fejl eller nægtet adgang:", error);
         alert("Kunne ikke hente GPS-lokation. Bruger Fredericia som standard.");
-        document.getElementById('city-search').value = "Fredericia";
+        cityInput.value = "Fredericia";
         searchCityWeatherFallback("Fredericia");
-      }
+      },
+      { timeout: 10000, enableHighAccuracy: true }
     );
   } else {
-    alert("Geolokation understøttes ikke.");
+    alert("Geolokation understøttes ikke af din enhed.");
+    cityInput.value = "Fredericia";
+    searchCityWeatherFallback("Fredericia");
   }
 }
 
@@ -130,26 +135,17 @@ async function searchCityWeatherFallback(cityName) {
     }
 
     const location = data.results[0];
-    const mockPosition = {
-      coords: {
-        latitude: location.latitude,
-        longitude: location.longitude
-      }
-    };
-
     document.getElementById('city-search').value = `${location.name} (${location.country || ''})`;
-    fetchWeather(mockPosition);
+    fetchWeather(location.latitude, location.longitude);
 
   } catch (e) {
+    console.error(e);
     alert("Fejl ved søgning efter by.");
   }
 }
 
-async function fetchWeather(position) {
-  const lat = position.coords.latitude;
-  const lon = position.coords.longitude;
-  const hourOffset = parseInt(document.getElementById('forecast-time').value);
-
+async function fetchWeather(lat, lon) {
+  const hourOffset = parseInt(document.getElementById('forecast-time').value) || 0;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,apparent_temperature,precipitation_probability,wind_speed_10m,uv_index,is_day&daily=sunrise,sunset&timezone=auto`;
 
   try {
@@ -170,7 +166,9 @@ async function fetchWeather(position) {
     const rainProb = data.hourly.precipitation_probability[targetIndex];
     const uv = data.hourly.uv_index[targetIndex];
     const isDay = data.hourly.is_day[targetIndex];
-    const sunsetTime = data.daily.sunset[0] ? new Date(data.daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const sunsetTime = (data.daily && data.daily.sunset && data.daily.sunset[0]) 
+      ? new Date(data.daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      : '';
 
     currentWeatherData = {
       temp,
@@ -199,6 +197,7 @@ async function fetchWeather(position) {
     document.getElementById('weather-info').classList.remove('hidden');
 
   } catch (e) {
+    console.error("Fejl ved vejr-hentning:", e);
     alert("Fejl ved hentning af vejrdata.");
   }
 }
@@ -219,10 +218,11 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
   }
 }
 
-// 3. Garmin / GPX File Handler
-async function handleGarminUpload() {
+// 3. Garmin / GPX Integration
+function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
-  if (fileInput.files.length === 0) {
+  
+  if (!fileInput || fileInput.files.length === 0) {
     alert("Vælg venligst en .gpx eller .fit fil først.");
     return;
   }
@@ -230,62 +230,168 @@ async function handleGarminUpload() {
   const file = fileInput.files[0];
   const reader = new FileReader();
 
-  reader.onload = async function(e) {
+  reader.onerror = function() {
+    alert("Fejl ved læsning af filen.");
+  };
+
+  reader.onload = function(e) {
     const content = e.target.result;
     
-    if (file.name.endsWith('.gpx')) {
-      parseGpxContent(content);
+    if (file.name.toLowerCase().endsWith('.gpx')) {
+      parseGpxContent(content, file.name);
+    } else if (file.name.toLowerCase().endsWith('.fit')) {
+      alert("Garmin .fit filer kan pt. eksporteres direkte som .gpx i Garmin Connect eller Strava.");
     } else {
-      alert("Garmin .gpx filer indlæses direkte. .fit filer kan eksporteres til GPX i Garmin Connect.");
+      alert("Ugyldigt filformat. Upload venligst en .gpx fil.");
     }
   };
 
   reader.readAsText(file);
 }
 
-function parseGpxContent(gpxText) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(gpxText, "text/xml");
-  const trkpts = xmlDoc.getElementsByTagName('trkpt');
-  
-  const estDistance = (trkpts.length * 0.015).toFixed(2); // Estimat ud fra punkter
-  document.getElementById('g-distance').innerText = estDistance;
-  document.getElementById('g-time').innerText = "Garmin GPX Rute";
-  document.getElementById('garmin-result').classList.remove('hidden');
-  
-  alert(`Garmin rute indlæst succesfuldt! Estimeret længde: ${estDistance} km.`);
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Jordens radius i km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function parseGpxContent(gpxText, fileName) {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(gpxText, "text/xml");
+    
+    const parserError = xmlDoc.getElementsByTagName("parsererror");
+    if (parserError.length > 0) {
+      alert("Fejl ved parsing af GPX-filen. Sørg for, at filen er en gyldig GPX-fil.");
+      return;
+    }
+
+    let trackPoints = xmlDoc.getElementsByTagName('trkpt');
+    if (trackPoints.length === 0) {
+      trackPoints = xmlDoc.getElementsByTagName('rtept');
+    }
+
+    if (trackPoints.length === 0) {
+      alert("Ingen rutepunkter fundet i GPX-filen.");
+      return;
+    }
+
+    let totalDistanceKm = 0;
+    let totalElevationGain = 0;
+    let prevLat = null;
+    let prevLon = null;
+    let prevEle = null;
+
+    const startLat = parseFloat(trackPoints[0].getAttribute('lat'));
+    const startLon = parseFloat(trackPoints[0].getAttribute('lon'));
+
+    for (let i = 0; i < trackPoints.length; i++) {
+      const lat = parseFloat(trackPoints[i].getAttribute('lat'));
+      const lon = parseFloat(trackPoints[i].getAttribute('lon'));
+      
+      const eleNode = trackPoints[i].getElementsByTagName('ele')[0];
+      const ele = eleNode ? parseFloat(eleNode.textContent) : null;
+
+      if (prevLat !== null && prevLon !== null) {
+        totalDistanceKm += calculateDistance(prevLat, prevLon, lat, lon);
+      }
+
+      if (prevEle !== null && ele !== null && ele > prevEle) {
+        totalElevationGain += (ele - prevEle);
+      }
+
+      prevLat = lat;
+      prevLon = lon;
+      prevEle = ele;
+    }
+
+    document.getElementById('g-distance').innerText = totalDistanceKm.toFixed(2);
+    document.getElementById('g-time').innerText = `${fileName} (${Math.round(totalElevationGain)}m stigning)`;
+    document.getElementById('garmin-result').classList.remove('hidden');
+
+    if (startLat && startLon) {
+      document.getElementById('city-search').value = `Rute start (${totalDistanceKm.toFixed(1)} km)`;
+      fetchWeather(startLat, startLon);
+    }
+
+    alert(`Rute '${fileName}' indlæst!\nLængde: ${totalDistanceKm.toFixed(2)} km\nHøjdemeter: ${Math.round(totalElevationGain)}m`);
+
+  } catch (err) {
+    console.error("GPX parse fejl:", err);
+    alert("Der opstod en fejl under læsning af GPX-filen.");
+  }
 }
 
 // 4. Automatisk Outfit-Matching & SVG Avatar
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
-    alert("Hent venligst vejret først!");
+    alert("Hent venligst vejret først ved at vælge lokation eller GPS!");
     return;
   }
 
-  const sensitivityMod = document.getElementById('sensitivity').value;
-  const routeType = document.getElementById('route-type').value;
+  if (!wardrobeData || wardrobeData.length === 0) {
+    alert("Dit klædeskab ser ud til at være tomt eller ikke indlæst fra databasen endnu.");
+    return;
+  }
+
+  const sensitivityEl = document.getElementById('sensitivity');
+  const routeTypeEl = document.getElementById('route-type');
+
+  const sensitivityMod = sensitivityEl ? sensitivityEl.value : 'normal';
+  const routeType = routeTypeEl ? routeTypeEl.value : 'almindelig';
 
   let scoreTemp = currentWeatherData.effectiveTemp;
-  if (sensitivityMod === 'frysending') scoreTemp -= 3;
+  if (sensitivityMod === 'frysende') scoreTemp -= 3;
   if (sensitivityMod === 'varm') scoreTemp += 3;
   if (routeType === 'tempo') scoreTemp += 3;
   if (routeType === 'rolig') scoreTemp -= 2;
 
   const cleanWardrobe = wardrobeData.filter(i => !i.in_wash);
 
-  const baseLayer = findBestItem(cleanWardrobe, 'baselayer', scoreTemp);
-  const midLayer = (scoreTemp < 10) ? findBestItem(cleanWardrobe, 'midlayer', scoreTemp) : null;
-  const outerLayer = (scoreTemp < 5) ? findBestItem(cleanWardrobe, 'outer', scoreTemp) : null;
-  const extraLayer = findBestItem(cleanWardrobe, 'accessory', scoreTemp) || { name: 'Standard løbetights' };
+  const baseLayer = findBestItemFlexible(cleanWardrobe, ['baselayer', 'inderlag', 'trøje'], scoreTemp);
+  const midLayer = (scoreTemp < 10) ? findBestItemFlexible(cleanWardrobe, ['midlayer', 'mellemlag', 'trøje'], scoreTemp) : null;
+  const outerLayer = (scoreTemp < 5) ? findBestItemFlexible(cleanWardrobe, ['outer', 'jakke', 'windbreaker'], scoreTemp) : null;
+  const extraLayer = findBestItemFlexible(cleanWardrobe, ['accessory', 'tights', 'bukser', 'shorts'], scoreTemp) || { name: 'Standard løbetights' };
 
-  document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.name} (Varmegrad: ${baseLayer.warmth}/5)` : 'Ingen tilgængelig i skabet';
-  document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.name} (Varmegrad: ${midLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.name} (Varmegrad: ${outerLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-extra').innerText = `${extraLayer.name}`;
+  const baseEl = document.getElementById('layer-base');
+  const midEl = document.getElementById('layer-mid');
+  const outerEl = document.getElementById('layer-outer');
+  const extraEl = document.getElementById('layer-extra');
+
+  if (baseEl) baseEl.innerText = baseLayer ? `${baseLayer.name} (Varmegrad: ${baseLayer.warmth}/5)` : 'Ingen inderlag tilgængelig';
+  if (midEl) midEl.innerText = midLayer ? `${midLayer.name} (Varmegrad: ${midLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
+  if (outerEl) outerEl.innerText = outerLayer ? `${outerLayer.name} (Varmegrad: ${outerLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
+  if (extraEl) extraEl.innerText = `${extraLayer.name}`;
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
-  document.getElementById('outfit-result').classList.remove('hidden');
+  
+  const resultDiv = document.getElementById('outfit-result');
+  if (resultDiv) resultDiv.classList.remove('hidden');
+}
+
+function findBestItemFlexible(items, targetCategories, targetTemp) {
+  const filtered = items.filter(i => {
+    if (!i.category) return false;
+    const cat = i.category.toLowerCase();
+    return targetCategories.some(tc => cat.includes(tc));
+  });
+
+  if (filtered.length === 0) {
+    if (items.length === 0) return null;
+    return items[0];
+  }
+
+  const idealWarmth = getIdealWarmth(targetTemp);
+
+  return filtered.reduce((prev, curr) => {
+    return Math.abs((curr.warmth || 3) - idealWarmth) < Math.abs((prev.warmth || 3) - idealWarmth) ? curr : prev;
+  });
 }
 
 function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
@@ -314,15 +420,6 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-function findBestItem(items, category, targetTemp) {
-  const filtered = items.filter(i => i.category === category);
-  if (filtered.length === 0) return null;
-
-  return filtered.reduce((prev, curr) => {
-    return Math.abs(curr.warmth - getIdealWarmth(targetTemp)) < Math.abs(prev.warmth - getIdealWarmth(targetTemp)) ? curr : prev;
-  });
-}
-
 function getIdealWarmth(temp) {
   if (temp < -5) return 5;
   if (temp < 2) return 4;
@@ -342,6 +439,8 @@ async function loadWardrobe() {
 
 function renderWardrobe(items) {
   const list = document.getElementById('wardrobe-list');
+  if (!list) return;
+
   if (items.length === 0) {
     list.innerHTML = `<p class="empty-msg">Dit klædeskab er tomt.</p>`;
     return;
@@ -377,7 +476,7 @@ function filterWardrobe(filter) {
   }
 }
 
-// 6. Feedback indsendelse
+// 6. Feedback Indsendelse
 async function sendFeedback() {
   const selectedBtn = document.querySelector('.btn-fb[data-selected="true"]');
   if (!selectedBtn) {
@@ -407,7 +506,7 @@ async function sendFeedback() {
 // 7. Ønskeseddel Generator
 function generateWishlist() {
   const suggestions = [];
-  const winterBase = wardrobeData.filter(i => i.category === 'baselayer' && i.warmth >= 4);
+  const winterBase = wardrobeData.filter(i => i.category && i.category.toLowerCase().includes('base') && i.warmth >= 4);
   if (winterBase.length === 0) {
     suggestions.push({
       title: "🔥 Varm Merino Uld Baselayer",
@@ -415,7 +514,7 @@ function generateWishlist() {
     });
   }
 
-  const windJacket = wardrobeData.filter(i => i.category === 'outer');
+  const windJacket = wardrobeData.filter(i => i.category && (i.category.toLowerCase().includes('outer') || i.category.toLowerCase().includes('jakke')));
   if (windJacket.length === 0) {
     suggestions.push({
       title: "🌬️ Vindtæt Løbejakke",
@@ -431,12 +530,15 @@ function generateWishlist() {
   }
 
   const container = document.getElementById('wishlist-items');
-  container.innerHTML = suggestions.map(s => `
-    <div class="wishlist-item">
-      <h5>${s.title}</h5>
-      <p>${s.reason}</p>
-    </div>
-  `).join('');
+  if (container) {
+    container.innerHTML = suggestions.map(s => `
+      <div class="wishlist-item">
+        <h5>${s.title}</h5>
+        <p>${s.reason}</p>
+      </div>
+    `).join('');
+  }
 
-  document.getElementById('wishlist-modal').classList.remove('hidden');
+  const modal = document.getElementById('wishlist-modal');
+  if (modal) modal.classList.remove('hidden');
 }
