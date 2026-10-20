@@ -173,14 +173,63 @@
       </div>
     </section>
 
-    <!-- 4. Klædeskab & Ønskeseddel -->
+    <!-- 4. Klædeskab, Foto-Upload & Ønskeseddel -->
     <section class="card">
       <div class="card-header-flex">
         <h2>4. Mit Klædeskab</h2>
         <button id="btn-wishlist" class="btn outline small">🎁 Generer Ønskeseddel</button>
       </div>
 
-      <div class="filter-bar">
+      <!-- Kamera & Billede-upload Sektion -->
+      <div class="add-item-box margin-top">
+        <label for="camera-input" class="btn primary small" style="display: inline-block; text-align: center; cursor: pointer;">
+          📸 Tag foto / Upload nyt løbetøj
+        </label>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
+        <!-- Preview & Tilføj Formular -->
+        <div id="image-upload-preview-container" class="margin-top hidden">
+          <div style="text-align: center;">
+            <img id="image-preview" src="" alt="Preview af tøj" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border);" />
+          </div>
+
+          <div class="form-group margin-top">
+            <label for="new-item-brand">Mærke (Brand)</label>
+            <input type="text" id="new-item-brand" placeholder="F.eks. Fusion, Nike, Craft..." />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="new-item-category">Kategori</label>
+              <select id="new-item-category">
+                <option value="overdel">Overdel</option>
+                <option value="underdel">Underdel</option>
+                <option value="tilbehoer">Tilbehør</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="new-item-sub-category">Underkategori</label>
+              <input type="text" id="new-item-sub-category" placeholder="F.eks. Tights, Jakke..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="new-item-warmth">Varmegrad (1 = Meget let/sommer, 5 = Ekstrem vinter)</label>
+            <select id="new-item-warmth">
+              <option value="1">1 - Sommer / Meget tynd</option>
+              <option value="2">2 - Forår / Mellem</option>
+              <option value="3" selected>3 - Efterår / Standard</option>
+              <option value="4">4 - Vinter / Varm</option>
+              <option value="5">5 - Ekstrem kulde / Kraftig uld eller jakke</option>
+            </select>
+          </div>
+
+          <button id="btn-save-new-item" class="btn secondary margin-top">💾 Gem tøj i klædeskabet</button>
+          <p id="upload-status" class="status-msg margin-top"></p>
+        </div>
+      </div>
+
+      <div class="filter-bar margin-top">
         <button class="filter-btn active" data-filter="all">Alt</button>
         <button class="filter-btn" data-filter="clean">Klar i skabet</button>
         <button class="filter-btn" data-filter="wash">🧺 Til vask</button>
