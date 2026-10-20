@@ -241,6 +241,19 @@ select, input[type="text"], input[type="file"] {
 .item-info h4 { font-size: 0.95rem; }
 .item-info p { font-size: 0.8rem; color: var(--text-muted); }
 
+.add-item-box {
+  background: #0f172a;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.status-msg {
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
 .filter-bar {
   display: flex;
   gap: 8px;
