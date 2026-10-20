@@ -32,8 +32,9 @@ function setupEventListeners() {
     document.getElementById('wishlist-modal').classList.add('hidden');
   });
 
-  // Kamera / Foto Upload Event-Listeners
+  // Kamera & Galleri Event-Listeners
   document.getElementById('camera-input').addEventListener('change', handleImageUpload);
+  document.getElementById('gallery-input').addEventListener('change', handleImageUpload);
   document.getElementById('btn-save-new-item').addEventListener('click', saveNewItemToSupabase);
 
   document.getElementById('saved-routes').addEventListener('change', (e) => {
@@ -226,7 +227,7 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
   }
 }
 
-// 3. Garmin / GPX Integration & Smart Forudfyldning (Med Namespace-sikring)
+// 3. Garmin / GPX Integration & Smart Forudfyldning
 function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
   if (!fileInput || fileInput.files.length === 0) {
@@ -293,7 +294,6 @@ function parseGpxContent(gpxText, fileName) {
 
       coords.push({ lat, lon });
 
-      // Læs højdemetre (<ele>) med namespace-sikring
       let eleNode = trackPoints[i].getElementsByTagNameNS('*', 'ele')[0] || trackPoints[i].getElementsByTagName('ele')[0];
       if (eleNode && i > 0) {
         let prevEleNode = trackPoints[i-1].getElementsByTagNameNS('*', 'ele')[0] || trackPoints[i-1].getElementsByTagName('ele')[0];
@@ -303,7 +303,6 @@ function parseGpxContent(gpxText, fileName) {
         }
       }
 
-      // Læs tidsstempler (<time>) med namespace-sikring
       let timeNode = trackPoints[i].getElementsByTagNameNS('*', 'time')[0] || trackPoints[i].getElementsByTagName('time')[0];
       if (timeNode && timeNode.textContent) {
         const timeVal = new Date(timeNode.textContent).getTime();
@@ -315,7 +314,7 @@ function parseGpxContent(gpxText, fileName) {
       }
     }
 
-    // --- 1. RUTE-MILJØ ANALYSE (Vægt 1: HØJEST - Kystnærhed i Fredericia-området) ---
+    // 1. RUTE-MILJØ ANALYSE (Kystnærhed)
     const isCoastalRute = coords.some(pt => pt.lon > 9.7550 || pt.lat > 55.5800);
     const envSelect = document.getElementById('route-environment');
     
@@ -325,7 +324,7 @@ function parseGpxContent(gpxText, fileName) {
       envSelect.value = 'sheltered';
     }
 
-    // --- 2. TEMPO ANALYSE (Kun hvis tidsdata findes) ---
+    // 2. TEMPO ANALYSE
     const routeTypeSelect = document.getElementById('route-type');
     let paceMinPerKm = null;
 
@@ -345,7 +344,6 @@ function parseGpxContent(gpxText, fileName) {
       }
     }
 
-    // --- VISUALISERING & STATUS ---
     renderRouteSvg(coords, minLat, maxLat, minLon, maxLon);
 
     document.getElementById('g-distance').innerText = totalDistanceKm.toFixed(2);
@@ -494,7 +492,7 @@ function getIdealWarmth(temp) {
   return 1;
 }
 
-// 5. Klædeskab & Vaskestatus (Læser direkte fra 'user_wardrobe')
+// 5. Klædeskab & Vaskestatus (Læser fra 'user_wardrobe')
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -544,21 +542,27 @@ function filterWardrobe(filter) {
   }
 }
 
-// 5b. Foto & Billede Upload til nyt tøj i Supabase
+// 5b. Foto & Billede Upload (Håndterer både kamera og galleri på iOS Safari)
 function handleImageUpload(event) {
-  const file = event.target.files[0];
+  const file = event.target.files && event.target.files[0];
   if (!file) return;
 
+  const previewImg = document.getElementById('image-preview');
   const reader = new FileReader();
+
   reader.onload = function(e) {
-    const previewImg = document.getElementById('image-preview');
     previewImg.src = e.target.result;
-    
     document.getElementById('image-upload-preview-container').classList.remove('hidden');
     document.getElementById('new-item-brand').value = '';
     document.getElementById('new-item-sub-category').value = '';
     document.getElementById('upload-status').innerText = '';
   };
+
+  reader.onerror = function(err) {
+    console.error("Kunne ikke læse billedet:", err);
+    alert("Fejl ved indlæsning af billedet. Prøv et andet foto.");
+  };
+
   reader.readAsDataURL(file);
 }
 
@@ -596,6 +600,7 @@ async function saveNewItemToSupabase() {
       setTimeout(() => {
         document.getElementById('image-upload-preview-container').classList.add('hidden');
         document.getElementById('camera-input').value = '';
+        document.getElementById('gallery-input').value = '';
       }, 1500);
 
       await loadWardrobe();
