@@ -1,4 +1,4 @@
-// === CONFIGURATIO ==
+// === CONFIGURATION ==
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
@@ -226,7 +226,7 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
   }
 }
 
-// 3. Garmin / GPX Integration & Kort-tegner
+// 3. Garmin / GPX Integration & Smart Forudfyldning (Med Namespace-sikring)
 function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
   if (!fileInput || fileInput.files.length === 0) {
@@ -264,7 +264,9 @@ function parseGpxContent(gpxText, fileName) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(gpxText, "text/xml");
     
-    let trackPoints = xmlDoc.getElementsByTagName('trkpt');
+    let trackPoints = xmlDoc.getElementsByTagNameNS('*', 'trkpt');
+    if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('trkpt');
+    if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagNameNS('*', 'rtept');
     if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('rtept');
 
     if (trackPoints.length === 0) {
@@ -273,13 +275,17 @@ function parseGpxContent(gpxText, fileName) {
     }
 
     let totalDistanceKm = 0;
+    let totalElevationGain = 0;
     let coords = [];
+    let times = [];
     let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
 
     for (let i = 0; i < trackPoints.length; i++) {
       const lat = parseFloat(trackPoints[i].getAttribute('lat'));
       const lon = parseFloat(trackPoints[i].getAttribute('lon'));
       
+      if (isNaN(lat) || isNaN(lon)) continue;
+
       if (lat < minLat) minLat = lat;
       if (lat > maxLat) maxLat = lat;
       if (lon < minLon) minLon = lon;
@@ -287,15 +293,63 @@ function parseGpxContent(gpxText, fileName) {
 
       coords.push({ lat, lon });
 
+      // Læs højdemetre (<ele>) med namespace-sikring
+      let eleNode = trackPoints[i].getElementsByTagNameNS('*', 'ele')[0] || trackPoints[i].getElementsByTagName('ele')[0];
+      if (eleNode && i > 0) {
+        let prevEleNode = trackPoints[i-1].getElementsByTagNameNS('*', 'ele')[0] || trackPoints[i-1].getElementsByTagName('ele')[0];
+        if (prevEleNode) {
+          const diff = parseFloat(eleNode.textContent) - parseFloat(prevEleNode.textContent);
+          if (!isNaN(diff) && diff > 0) totalElevationGain += diff;
+        }
+      }
+
+      // Læs tidsstempler (<time>) med namespace-sikring
+      let timeNode = trackPoints[i].getElementsByTagNameNS('*', 'time')[0] || trackPoints[i].getElementsByTagName('time')[0];
+      if (timeNode && timeNode.textContent) {
+        const timeVal = new Date(timeNode.textContent).getTime();
+        if (!isNaN(timeVal)) times.push(timeVal);
+      }
+
       if (i > 0) {
         totalDistanceKm += calculateDistance(coords[i-1].lat, coords[i-1].lon, lat, lon);
       }
     }
 
+    // --- 1. RUTE-MILJØ ANALYSE (Vægt 1: HØJEST - Kystnærhed i Fredericia-området) ---
+    const isCoastalRute = coords.some(pt => pt.lon > 9.7550 || pt.lat > 55.5800);
+    const envSelect = document.getElementById('route-environment');
+    
+    if (isCoastalRute) {
+      envSelect.value = 'open';
+    } else {
+      envSelect.value = 'sheltered';
+    }
+
+    // --- 2. TEMPO ANALYSE (Kun hvis tidsdata findes) ---
+    const routeTypeSelect = document.getElementById('route-type');
+    let paceMinPerKm = null;
+
+    if (times.length >= 2 && totalDistanceKm > 0) {
+      const totalSeconds = (times[times.length - 1] - times[0]) / 1000;
+      const totalMinutes = totalSeconds / 60;
+      paceMinPerKm = totalMinutes / totalDistanceKm;
+
+      if (!isNaN(paceMinPerKm) && paceMinPerKm > 0 && paceMinPerKm < 20) {
+        if (paceMinPerKm < 4.5) {
+          routeTypeSelect.value = 'tempo';
+        } else if (paceMinPerKm > 5.75) {
+          routeTypeSelect.value = 'rolig';
+        } else {
+          routeTypeSelect.value = 'almindelig';
+        }
+      }
+    }
+
+    // --- VISUALISERING & STATUS ---
     renderRouteSvg(coords, minLat, maxLat, minLon, maxLon);
 
     document.getElementById('g-distance').innerText = totalDistanceKm.toFixed(2);
-    document.getElementById('g-time').innerText = `${fileName}`;
+    document.getElementById('g-time').innerText = `${fileName} (+${Math.round(totalElevationGain)}m stigning)`;
     document.getElementById('garmin-result').classList.remove('hidden');
 
     if (coords.length > 0) {
@@ -303,7 +357,17 @@ function parseGpxContent(gpxText, fileName) {
       fetchWeather(coords[0].lat, coords[0].lon);
     }
 
-    alert(`Rute '${fileName}' indlæst!\nLængde: ${totalDistanceKm.toFixed(2)} km`);
+    let paceText = paceMinPerKm && !isNaN(paceMinPerKm) 
+      ? `• **Beregnet Tempo:** ${Math.floor(paceMinPerKm)}:${Math.round((paceMinPerKm % 1) * 60).toString().padStart(2, '0')} min/km ➔ Anbefalet: '${routeTypeSelect.value}'\n`
+      : '';
+
+    let recommendationMsg = `📍 **GPX Rute Indlæst** (${totalDistanceKm.toFixed(2)} km, +${Math.round(totalElevationGain)}m stigning)\n\n` +
+      `💡 **AI Anbefaling forudfylt:**\n` +
+      `• **Rute-miljø:** ${isCoastalRute ? 'Åbent land / Kyst (Vindfølsom)' : 'Læ / Skov'}\n` +
+      paceText +
+      `\nDu kan frit overstyre valgene i felterne ovenfor!`;
+
+    alert(recommendationMsg);
 
   } catch (err) {
     console.error(err);
