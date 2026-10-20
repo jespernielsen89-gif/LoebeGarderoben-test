@@ -2,8 +2,8 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
-// Undgå 'already been declared' fejl hvis den loades globalt
-window.supabase = window.supabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Opret klienten direkte som en global variabel uden 'const'
+window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
 let wardrobeData = [];
