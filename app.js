@@ -87,18 +87,28 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr (Med sikker fallback til Fredericia)
+// 2. Geolocation & Vejr (Med indbygget beskyttelse mod forkerte Sydamerika-koordinater)
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
     cityInput.value = "Henter din GPS lokation...";
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        cityInput.value = "Nuværende GPS Lokation";
-        fetchWeather(position.coords.latitude, position.coords.longitude);
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        // Hvis browseren returnerer forkerte/negative breddegrader (som peger på Brasilien), tving Fredericia
+        if (lat < 0) {
+          console.warn("Ugyldige GPS-koordinater modtaget. Bruger Fredericia i stedet.");
+          cityInput.value = "Fredericia";
+          fetchWeather(55.5657, 9.7583);
+        } else {
+          cityInput.value = "Nuværende GPS Lokation";
+          fetchWeather(lat, lon);
+        }
       }, 
       (error) => {
-        console.warn("GPS-fejl eller nægtet adgang:", error);
+        console.warn("GPS-fejl eller adgang nægtet:", error);
         cityInput.value = "Fredericia";
         fetchWeather(55.5657, 9.7583);
       },
