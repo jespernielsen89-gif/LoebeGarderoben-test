@@ -30,19 +30,17 @@ function setupEventListeners() {
     document.getElementById('wishlist-modal').classList.add('hidden');
   });
 
-  // Skift rute-miljø automatisk ved valg af historisk rute
   document.getElementById('saved-routes').addEventListener('change', (e) => {
     const selectedRoute = e.target.value;
     if (selectedRoute === 'route1') {
       document.getElementById('route-environment').value = 'sheltered';
-      alert("Valgt: Skov- og Lætur. Rute-miljø opdateret automatisk til 'Læ / Skov'.");
+      alert("Valgt: Skov- og Lætur. Rute-miljø opdateret til 'Læ / Skov'.");
     } else if (selectedRoute === 'route2') {
       document.getElementById('route-environment').value = 'open';
-      alert("Valgt: Kysten. Rute-miljø opdateret automatisk til 'Åbent land / Kyst'.");
+      alert("Valgt: Kysten. Rute-miljø opdateret til 'Åbent land / Kyst'.");
     }
   });
 
-  // Filter knapper
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -51,7 +49,6 @@ function setupEventListeners() {
     });
   });
 
-  // Feedback knapper
   document.querySelectorAll('.btn-fb').forEach(btn => {
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.btn-fb').forEach(b => b.style.borderColor = 'var(--border)');
@@ -99,7 +96,7 @@ function getLocationWeather() {
         fetchWeather(position.coords.latitude, position.coords.longitude);
       }, 
       (error) => {
-        console.warn("GPS-fejl eller nægtet adgang:", error);
+        console.warn("GPS-fejl:", error);
         alert("Kunne ikke hente GPS-lokation. Bruger Fredericia som standard.");
         cityInput.value = "Fredericia";
         searchCityWeatherFallback("Fredericia");
@@ -107,7 +104,6 @@ function getLocationWeather() {
       { timeout: 10000, enableHighAccuracy: true }
     );
   } else {
-    alert("Geolokation understøttes ikke af din enhed.");
     cityInput.value = "Fredericia";
     searchCityWeatherFallback("Fredericia");
   }
@@ -130,16 +126,14 @@ async function searchCityWeatherFallback(cityName) {
     const data = await res.json();
 
     if (!data.results || data.results.length === 0) {
-      alert("Kunne ikke finde byen. Prøv igen.");
+      alert("Kunne ikke finde byen.");
       return;
     }
 
     const location = data.results[0];
     document.getElementById('city-search').value = `${location.name} (${location.country || ''})`;
     fetchWeather(location.latitude, location.longitude);
-
   } catch (e) {
-    console.error(e);
     alert("Fejl ved søgning efter by.");
   }
 }
@@ -197,7 +191,6 @@ async function fetchWeather(lat, lon) {
     document.getElementById('weather-info').classList.remove('hidden');
 
   } catch (e) {
-    console.error("Fejl ved vejr-hentning:", e);
     alert("Fejl ved hentning af vejrdata.");
   }
 }
@@ -218,34 +211,25 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
   }
 }
 
-// 3. Garmin / GPX Integration
+// 3. Garmin / GPX Integration & Kort-tegner
 function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
-  
   if (!fileInput || fileInput.files.length === 0) {
-    alert("Vælg venligst en .gpx eller .fit fil først.");
+    alert("Vælg venligst en .gpx fil først.");
     return;
   }
 
   const file = fileInput.files[0];
   const reader = new FileReader();
 
-  reader.onerror = function() {
-    alert("Fejl ved læsning af filen.");
-  };
-
   reader.onload = function(e) {
     const content = e.target.result;
-    
     if (file.name.toLowerCase().endsWith('.gpx')) {
       parseGpxContent(content, file.name);
-    } else if (file.name.toLowerCase().endsWith('.fit')) {
-      alert("Garmin .fit filer kan pt. eksporteres direkte som .gpx i Garmin Connect eller Strava.");
     } else {
-      alert("Ugyldigt filformat. Upload venligst en .gpx fil.");
+      alert("Upload venligst en .gpx fil.");
     }
   };
-
   reader.readAsText(file);
 }
 
@@ -253,10 +237,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Jordens radius i km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -266,85 +249,100 @@ function parseGpxContent(gpxText, fileName) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(gpxText, "text/xml");
     
-    const parserError = xmlDoc.getElementsByTagName("parsererror");
-    if (parserError.length > 0) {
-      alert("Fejl ved parsing af GPX-filen. Sørg for, at filen er en gyldig GPX-fil.");
-      return;
-    }
-
     let trackPoints = xmlDoc.getElementsByTagName('trkpt');
-    if (trackPoints.length === 0) {
-      trackPoints = xmlDoc.getElementsByTagName('rtept');
-    }
+    if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('rtept');
 
     if (trackPoints.length === 0) {
-      alert("Ingen rutepunkter fundet i GPX-filen.");
+      alert("Ingen punkter fundet i GPX-filen.");
       return;
     }
 
     let totalDistanceKm = 0;
-    let totalElevationGain = 0;
-    let prevLat = null;
-    let prevLon = null;
-    let prevEle = null;
-
-    const startLat = parseFloat(trackPoints[0].getAttribute('lat'));
-    const startLon = parseFloat(trackPoints[0].getAttribute('lon'));
+    let coords = [];
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
 
     for (let i = 0; i < trackPoints.length; i++) {
       const lat = parseFloat(trackPoints[i].getAttribute('lat'));
       const lon = parseFloat(trackPoints[i].getAttribute('lon'));
       
-      const eleNode = trackPoints[i].getElementsByTagName('ele')[0];
-      const ele = eleNode ? parseFloat(eleNode.textContent) : null;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
 
-      if (prevLat !== null && prevLon !== null) {
-        totalDistanceKm += calculateDistance(prevLat, prevLon, lat, lon);
+      coords.push({ lat, lon });
+
+      if (i > 0) {
+        totalDistanceKm += calculateDistance(coords[i-1].lat, coords[i-1].lon, lat, lon);
       }
-
-      if (prevEle !== null && ele !== null && ele > prevEle) {
-        totalElevationGain += (ele - prevEle);
-      }
-
-      prevLat = lat;
-      prevLon = lon;
-      prevEle = ele;
     }
+
+    // Tegn ruten op i SVG-elementet
+    renderRouteSvg(coords, minLat, maxLat, minLon, maxLon);
 
     document.getElementById('g-distance').innerText = totalDistanceKm.toFixed(2);
-    document.getElementById('g-time').innerText = `${fileName} (${Math.round(totalElevationGain)}m stigning)`;
+    document.getElementById('g-time').innerText = `${fileName}`;
     document.getElementById('garmin-result').classList.remove('hidden');
 
-    if (startLat && startLon) {
+    if (coords.length > 0) {
       document.getElementById('city-search').value = `Rute start (${totalDistanceKm.toFixed(1)} km)`;
-      fetchWeather(startLat, startLon);
+      fetchWeather(coords[0].lat, coords[0].lon);
     }
 
-    alert(`Rute '${fileName}' indlæst!\nLængde: ${totalDistanceKm.toFixed(2)} km\nHøjdemeter: ${Math.round(totalElevationGain)}m`);
+    alert(`Rute '${fileName}' indlæst!\nLængde: ${totalDistanceKm.toFixed(2)} km`);
 
   } catch (err) {
-    console.error("GPX parse fejl:", err);
-    alert("Der opstod en fejl under læsning af GPX-filen.");
+    console.error(err);
+    alert("Fejl ved læsning af GPX-fil.");
   }
 }
 
-// 4. Automatisk Outfit-Matching & SVG Avatar
+function renderRouteSvg(coords, minLat, maxLat, minLon, maxLon) {
+  const svgPath = document.getElementById('route-path');
+  const summaryText = document.getElementById('route-summary-text');
+  const mapContainer = document.getElementById('route-map-container');
+
+  if (!svgPath || coords.length === 0) return;
+
+  const width = 300;
+  const height = 150;
+  const padding = 20;
+
+  const latRange = maxLat - minLat || 0.0001;
+  const lonRange = maxLon - minLon || 0.0001;
+
+  let pathString = "";
+  coords.forEach((pt, index) => {
+    const x = padding + ((pt.lon - minLon) / lonRange) * (width - 2 * padding);
+    const y = height - (padding + ((pt.lat - minLat) / latRange) * (height - 2 * padding));
+
+    if (index === 0) {
+      pathString += `M ${x} ${y} `;
+    } else {
+      pathString += `L ${x} ${y} `;
+    }
+  });
+
+  svgPath.setAttribute('d', pathString);
+  if (summaryText) summaryText.innerText = `Viser rute med ${coords.length} punkter`;
+  if (mapContainer) mapContainer.classList.remove('hidden');
+}
+
+// 4. Automatisk Outfit-Matching
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
-    alert("Hent venligst vejret først ved at vælge lokation eller GPS!");
+    alert("Hent venligst vejret først!");
     return;
   }
 
   if (!wardrobeData || wardrobeData.length === 0) {
-    alert("Dit klædeskab ser ud til at være tomt eller ikke indlæst fra databasen endnu.");
+    alert("Henter klædeskab fra databasen... Prøv igen om et øjeblik.");
+    loadWardrobe();
     return;
   }
 
-  const sensitivityEl = document.getElementById('sensitivity');
-  const routeTypeEl = document.getElementById('route-type');
-
-  const sensitivityMod = sensitivityEl ? sensitivityEl.value : 'normal';
-  const routeType = routeTypeEl ? routeTypeEl.value : 'almindelig';
+  const sensitivityMod = document.getElementById('sensitivity').value;
+  const routeType = document.getElementById('route-type').value;
 
   let scoreTemp = currentWeatherData.effectiveTemp;
   if (sensitivityMod === 'frysende') scoreTemp -= 3;
@@ -354,38 +352,28 @@ function generateAutomaticOutfit() {
 
   const cleanWardrobe = wardrobeData.filter(i => !i.in_wash);
 
-  const baseLayer = findBestItemFlexible(cleanWardrobe, ['baselayer', 'inderlag', 'trøje'], scoreTemp);
-  const midLayer = (scoreTemp < 10) ? findBestItemFlexible(cleanWardrobe, ['midlayer', 'mellemlag', 'trøje'], scoreTemp) : null;
-  const outerLayer = (scoreTemp < 5) ? findBestItemFlexible(cleanWardrobe, ['outer', 'jakke', 'windbreaker'], scoreTemp) : null;
-  const extraLayer = findBestItemFlexible(cleanWardrobe, ['accessory', 'tights', 'bukser', 'shorts'], scoreTemp) || { name: 'Standard løbetights' };
+  const baseLayer = findBestItemAny(cleanWardrobe, ['base', 'inder', 'trøje', 'langærmet', 't-shirt'], scoreTemp);
+  const midLayer = (scoreTemp < 10) ? findBestItemAny(cleanWardrobe, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
+  const outerLayer = (scoreTemp < 5) ? findBestItemAny(cleanWardrobe, ['outer', 'jakke', 'wind', 'vest'], scoreTemp) : null;
+  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts', 'accessory'], scoreTemp) || { name: 'Standard løbetights' };
 
-  const baseEl = document.getElementById('layer-base');
-  const midEl = document.getElementById('layer-mid');
-  const outerEl = document.getElementById('layer-outer');
-  const extraEl = document.getElementById('layer-extra');
-
-  if (baseEl) baseEl.innerText = baseLayer ? `${baseLayer.name} (Varmegrad: ${baseLayer.warmth}/5)` : 'Ingen inderlag tilgængelig';
-  if (midEl) midEl.innerText = midLayer ? `${midLayer.name} (Varmegrad: ${midLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  if (outerEl) outerEl.innerText = outerLayer ? `${outerLayer.name} (Varmegrad: ${outerLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  if (extraEl) extraEl.innerText = `${extraLayer.name}`;
+  document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.name} (Varmegrad: ${baseLayer.warmth}/5)` : 'Ingen fundet i skabet';
+  document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.name} (Varmegrad: ${midLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
+  document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.name} (Varmegrad: ${outerLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
+  document.getElementById('layer-extra').innerText = `${extraLayer.name}`;
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
-  
-  const resultDiv = document.getElementById('outfit-result');
-  if (resultDiv) resultDiv.classList.remove('hidden');
+  document.getElementById('outfit-result').classList.remove('hidden');
 }
 
-function findBestItemFlexible(items, targetCategories, targetTemp) {
-  const filtered = items.filter(i => {
-    if (!i.category) return false;
-    const cat = i.category.toLowerCase();
-    return targetCategories.some(tc => cat.includes(tc));
+function findBestItemAny(items, keywords, targetTemp) {
+  let filtered = items.filter(i => {
+    const text = `${i.category || ''} ${i.name || ''}`.toLowerCase();
+    return keywords.some(kw => text.includes(kw));
   });
 
-  if (filtered.length === 0) {
-    if (items.length === 0) return null;
-    return items[0];
-  }
+  if (filtered.length === 0) filtered = items;
+  if (filtered.length === 0) return null;
 
   const idealWarmth = getIdealWarmth(targetTemp);
 
@@ -404,7 +392,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
 
   if (outerLayer) {
     torso.setAttribute('fill', '#1e3a8a');
-    statusText.innerText = `Påklædt med jakke (${outerLayer.name}) og lag-på-lag`;
+    statusText.innerText = `Påklædt med jakke (${outerLayer.name})`;
   } else if (midLayer) {
     torso.setAttribute('fill', '#059669');
     statusText.innerText = `Påklædt med mellemlag (${midLayer.name})`;
@@ -442,7 +430,7 @@ function renderWardrobe(items) {
   if (!list) return;
 
   if (items.length === 0) {
-    list.innerHTML = `<p class="empty-msg">Dit klædeskab er tomt.</p>`;
+    list.innerHTML = `<p class="empty-msg">Dit klædeskab er tomt eller kunne ikke hentes.</p>`;
     return;
   }
 
@@ -450,7 +438,7 @@ function renderWardrobe(items) {
     <div class="item-card ${item.in_wash ? 'in-wash' : ''}">
       <div class="item-info">
         <h4>${item.name} ${item.in_wash ? '🧺 (Til vask)' : ''}</h4>
-        <p>${item.category} | Varmegrad: ${item.warmth}/5</p>
+        <p>${item.category || 'Tøj'} | Varmegrad: ${item.warmth || 3}/5</p>
       </div>
       <div class="item-actions">
         <button class="btn outline small" onclick="toggleWash('${item.id}', ${!item.in_wash})">
@@ -480,7 +468,7 @@ function filterWardrobe(filter) {
 async function sendFeedback() {
   const selectedBtn = document.querySelector('.btn-fb[data-selected="true"]');
   if (!selectedBtn) {
-    alert("Vælg venligst en bedømmelse (f.eks. Perfekt).");
+    alert("Vælg venligst en bedømmelse.");
     return;
   }
 
@@ -495,39 +483,20 @@ async function sendFeedback() {
 
   const statusEl = document.getElementById('fb-status');
   if (!error) {
-    statusEl.innerText = "Tak! Din feedback er gemt og forbedrer næste tur.";
+    statusEl.innerText = "Tak! Din feedback er gemt.";
     statusEl.style.color = "var(--secondary)";
   } else {
-    statusEl.innerText = "Fejl ved lagring af feedback.";
+    statusEl.innerText = "Fejl ved lagring.";
     statusEl.style.color = "var(--danger)";
   }
 }
 
 // 7. Ønskeseddel Generator
 function generateWishlist() {
-  const suggestions = [];
-  const winterBase = wardrobeData.filter(i => i.category && i.category.toLowerCase().includes('base') && i.warmth >= 4);
-  if (winterBase.length === 0) {
-    suggestions.push({
-      title: "🔥 Varm Merino Uld Baselayer",
-      reason: "Du mangler et varmt inderlag til de frostklare vinterdage."
-    });
-  }
-
-  const windJacket = wardrobeData.filter(i => i.category && (i.category.toLowerCase().includes('outer') || i.category.toLowerCase().includes('jakke')));
-  if (windJacket.length === 0) {
-    suggestions.push({
-      title: "🌬️ Vindtæt Løbejakke",
-      reason: "Essentielt yderlag mod blæst og kulde i åbent terræn."
-    });
-  }
-
-  if (suggestions.length === 0) {
-    suggestions.push({
-      title: "🧦 Kvalitets Løbestrømper i Uld",
-      reason: "Dit klædeskab er rigtig godt dækket ind! Strømper er altid et stærkt juleønske."
-    });
-  }
+  const suggestions = [
+    { title: "🔥 Varm Merino Uld Baselayer", reason: "Godt supplement til de koldeste måneder." },
+    { title: "🌬️ Vindtæt Løbejakke", reason: "Essentielt mod vind og kølig kystluft." }
+  ];
 
   const container = document.getElementById('wishlist-items');
   if (container) {
@@ -542,3 +511,4 @@ function generateWishlist() {
   const modal = document.getElementById('wishlist-modal');
   if (modal) modal.classList.remove('hidden');
 }
+
