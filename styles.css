@@ -167,7 +167,6 @@ select, input[type="text"], input[type="file"] {
   color: #fef08a;
 }
 
-/* Avatar Box */
 .avatar-box {
   display: flex;
   flex-direction: column;
@@ -176,7 +175,6 @@ select, input[type="text"], input[type="file"] {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
-  margin-top: 12px;
 }
 
 .avatar-text {
@@ -265,7 +263,6 @@ select, input[type="text"], input[type="file"] {
   border-color: var(--primary);
 }
 
-/* Modal */
 .modal {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
