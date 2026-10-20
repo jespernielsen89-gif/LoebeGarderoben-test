@@ -2,7 +2,7 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
-// Opret databaseklienten korrekt ved hjælp af CDN'ets .createClient
+// Opret databaseklienten korrekt via CDN
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
@@ -18,7 +18,7 @@ async function initApp() {
   await loadWardrobe();
   setupEventListeners();
   
-  // Standard ved opstart: Hent automatisk enhedens GPS
+  // Standard ved opstart: Hent automatisk enhedens GPS (med sikker fallback til Fredericia)
   getLocationWeather();
 }
 
@@ -87,7 +87,7 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr (Bruger enhedens lokation som udgangspunkt)
+// 2. Geolocation & Vejr (Med sikker fallback til Fredericia)
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
@@ -99,16 +99,14 @@ function getLocationWeather() {
       }, 
       (error) => {
         console.warn("GPS-fejl eller nægtet adgang:", error);
-        alert("Kunne ikke hente GPS-lokation. Vælger Fredericia som standard.");
         cityInput.value = "Fredericia";
-        searchCityWeatherFallback("Fredericia");
+        fetchWeather(55.5657, 9.7583);
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
   } else {
-    alert("Geolokation understøttes ikke af denne enhed. Vælger Fredericia som standard.");
     cityInput.value = "Fredericia";
-    searchCityWeatherFallback("Fredericia");
+    fetchWeather(55.5657, 9.7583);
   }
 }
 
@@ -357,12 +355,12 @@ function generateAutomaticOutfit() {
   const baseLayer = findBestItemAny(cleanWardrobe, ['base', 'inder', 'trøje', 'langærmet', 't-shirt'], scoreTemp);
   const midLayer = (scoreTemp < 10) ? findBestItemAny(cleanWardrobe, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
   const outerLayer = (scoreTemp < 5) ? findBestItemAny(cleanWardrobe, ['outer', 'jakke', 'wind', 'vest'], scoreTemp) : null;
-  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts', 'accessory'], scoreTemp) || { name: 'Standard løbetights' };
+  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts', 'accessory'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
 
-  document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.name} (Varmegrad: ${baseLayer.warmth}/5)` : 'Ingen fundet i skabet';
-  document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.name} (Varmegrad: ${midLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.name} (Varmegrad: ${outerLayer.warmth}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-extra').innerText = `${extraLayer.name}`;
+  document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.brand || ''} ${baseLayer.sub_category} (Varmegrad: ${baseLayer.warmth_level}/5)` : 'Ingen fundet i skabet';
+  document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.brand || ''} ${midLayer.sub_category} (Varmegrad: ${midLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
+  document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.brand || ''} ${outerLayer.sub_category} (Varmegrad: ${outerLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
+  document.getElementById('layer-extra').innerText = `${extraLayer.brand || ''} ${extraLayer.sub_category || extraLayer.name}`;
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
   document.getElementById('outfit-result').classList.remove('hidden');
@@ -370,7 +368,7 @@ function generateAutomaticOutfit() {
 
 function findBestItemAny(items, keywords, targetTemp) {
   let filtered = items.filter(i => {
-    const text = `${i.category || ''} ${i.name || ''}`.toLowerCase();
+    const text = `${i.category || ''} ${i.sub_category || ''} ${i.brand || ''}`.toLowerCase();
     return keywords.some(kw => text.includes(kw));
   });
 
@@ -380,7 +378,7 @@ function findBestItemAny(items, keywords, targetTemp) {
   const idealWarmth = getIdealWarmth(targetTemp);
 
   return filtered.reduce((prev, curr) => {
-    return Math.abs((curr.warmth || 3) - idealWarmth) < Math.abs((prev.warmth || 3) - idealWarmth) ? curr : prev;
+    return Math.abs((curr.warmth_level || 3) - idealWarmth) < Math.abs((prev.warmth_level || 3) - idealWarmth) ? curr : prev;
   });
 }
 
@@ -394,13 +392,13 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
 
   if (outerLayer) {
     torso.setAttribute('fill', '#1e3a8a');
-    statusText.innerText = `Påklædt med jakke (${outerLayer.name})`;
+    statusText.innerText = `Påklædt med jakke (${outerLayer.sub_category})`;
   } else if (midLayer) {
     torso.setAttribute('fill', '#059669');
-    statusText.innerText = `Påklædt med mellemlag (${midLayer.name})`;
+    statusText.innerText = `Påklædt med mellemlag (${midLayer.sub_category})`;
   } else if (baseLayer) {
     torso.setAttribute('fill', '#2563eb');
-    statusText.innerText = `Påklædt i let inderlag (${baseLayer.name})`;
+    statusText.innerText = `Påklædt i let inderlag (${baseLayer.sub_category})`;
   }
 
   if (outerLayer || midLayer) {
@@ -418,12 +416,14 @@ function getIdealWarmth(temp) {
   return 1;
 }
 
-// 5. Klædeskab & Vaskestatus
+// 5. Klædeskab & Vaskestatus (Bruger 'user_wardrobe' og 'warmth_level')
 async function loadWardrobe() {
-  const { data, error } = await db.from('wardrobe').select('*');
+  const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
     wardrobeData = data;
     renderWardrobe(wardrobeData);
+  } else {
+    console.error("Fejl ved hentning af tøj:", error);
   }
 }
 
@@ -439,8 +439,8 @@ function renderWardrobe(items) {
   list.innerHTML = items.map(item => `
     <div class="item-card ${item.in_wash ? 'in-wash' : ''}">
       <div class="item-info">
-        <h4>${item.name} ${item.in_wash ? '🧺 (Til vask)' : ''}</h4>
-        <p>${item.category || 'Tøj'} | Varmegrad: ${item.warmth || 3}/5</p>
+        <h4>${item.brand || ''} ${item.sub_category || 'Løbetøj'} ${item.in_wash ? '🧺 (Til vask)' : ''}</h4>
+        <p>Kategori: ${item.category || 'Tøj'} | Varmegrad: ${item.warmth_level || 3}/5</p>
       </div>
       <div class="item-actions">
         <button class="btn outline small" onclick="toggleWash('${item.id}', ${!item.in_wash})">
@@ -452,7 +452,7 @@ function renderWardrobe(items) {
 }
 
 async function toggleWash(id, status) {
-  await db.from('wardrobe').update({ in_wash: status }).eq('id', id);
+  await db.from('user_wardrobe').update({ in_wash: status }).eq('id', id);
   await loadWardrobe();
 }
 
