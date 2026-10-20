@@ -2,9 +2,8 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
-// Undgå 'already been declared' fejl hvis den indlæses flere gange
-window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const supabase = window.supabaseClient;
+// Undgå 'already been declared' fejl hvis den loades globalt
+window.supabase = window.supabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
 let wardrobeData = [];
@@ -19,7 +18,7 @@ async function initApp() {
   await loadWardrobe();
   setupEventListeners();
   
-  // Standard ved opstart: Hent automatisk telefonens GPS
+  // Standard ved opstart: Hent automatisk enhedens GPS
   getLocationWeather();
 }
 
@@ -66,7 +65,7 @@ function setupEventListeners() {
 // 1. Feedback Offset (ML)
 async function fetchPersonalFeedbackOffset() {
   try {
-    const { data } = await supabase
+    const { data } = await window.supabase
       .from('outfit_feedback')
       .select('rating')
       .order('created_at', { ascending: false })
@@ -88,7 +87,7 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr
+// 2. Geolocation & Vejr (Bruger enhedens lokation som udgangspunkt)
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
@@ -99,14 +98,15 @@ function getLocationWeather() {
         fetchWeather(position.coords.latitude, position.coords.longitude);
       }, 
       (error) => {
-        console.warn("GPS-fejl:", error);
-        alert("Kunne ikke hente GPS-lokation. Bruger Fredericia som standard.");
+        console.warn("GPS-fejl eller nægtet adgang:", error);
+        alert("Kunne ikke hente GPS-lokation. Vælger Fredericia som standard.");
         cityInput.value = "Fredericia";
         searchCityWeatherFallback("Fredericia");
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
   } else {
+    alert("Geolokation understøttes ikke af denne enhed. Vælger Fredericia som standard.");
     cityInput.value = "Fredericia";
     searchCityWeatherFallback("Fredericia");
   }
@@ -280,7 +280,6 @@ function parseGpxContent(gpxText, fileName) {
       }
     }
 
-    // Tegn ruten op i SVG-elementet
     renderRouteSvg(coords, minLat, maxLat, minLon, maxLon);
 
     document.getElementById('g-distance').innerText = totalDistanceKm.toFixed(2);
@@ -421,7 +420,7 @@ function getIdealWarmth(temp) {
 
 // 5. Klædeskab & Vaskestatus
 async function loadWardrobe() {
-  const { data, error } = await supabase.from('wardrobe').select('*');
+  const { data, error } = await window.supabase.from('wardrobe').select('*');
   if (!error && data) {
     wardrobeData = data;
     renderWardrobe(wardrobeData);
@@ -453,7 +452,7 @@ function renderWardrobe(items) {
 }
 
 async function toggleWash(id, status) {
-  await supabase.from('wardrobe').update({ in_wash: status }).eq('id', id);
+  await window.supabase.from('wardrobe').update({ in_wash: status }).eq('id', id);
   await loadWardrobe();
 }
 
@@ -478,7 +477,7 @@ async function sendFeedback() {
   const rating = selectedBtn.dataset.rating;
   const comment = document.getElementById('fb-comment').value;
 
-  const { error } = await supabase.from('outfit_feedback').insert([{
+  const { error } = await window.supabase.from('outfit_feedback').insert([{
     rating,
     feels_like_temp: currentWeatherData ? currentWeatherData.effectiveTemp : null,
     comment
@@ -514,4 +513,3 @@ function generateWishlist() {
   const modal = document.getElementById('wishlist-modal');
   if (modal) modal.classList.remove('hidden');
 }
-
