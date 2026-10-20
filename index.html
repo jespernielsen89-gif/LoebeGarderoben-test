@@ -99,13 +99,22 @@
       </div>
 
       <div class="form-group margin-top">
-        <label for="garmin-file-input">Eller upload ny .gpx / .fit fil fra Garmin:</label>
-        <input type="file" id="garmin-file-input" accept=".fit, .gpx">
+        <label for="garmin-file-input">Eller upload ny .gpx fil fra Garmin:</label>
+        <input type="file" id="garmin-file-input" accept=".gpx">
       </div>
       <button id="btn-parse-garmin" class="btn outline small">Upload & Analysér Rute</button>
 
       <div id="garmin-result" class="weather-box hidden margin-top">
         <p><strong>Aktivitet:</strong> <span id="g-distance">--</span> km | Tid/Type: <span id="g-time">--</span></p>
+      </div>
+
+      <!-- Rutekort Boks -->
+      <div id="route-map-container" class="avatar-box hidden margin-top">
+        <h4>🗺️ Rutekort</h4>
+        <svg id="route-svg" viewBox="0 0 300 150" width="100%" height="140" style="background: #0f172a; border-radius: 8px; margin-top: 8px;">
+          <path id="route-path" d="" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <p id="route-summary-text" class="avatar-text">Ingen rute indlæst endnu</p>
       </div>
     </section>
 
@@ -115,7 +124,7 @@
       <button id="btn-generate" class="btn secondary">👕 Generer Automatisk Outfit</button>
 
       <!-- Visuel SVG Runner Avatar -->
-      <div id="runner-avatar-container" class="avatar-box hidden">
+      <div id="runner-avatar-container" class="avatar-box hidden margin-top">
         <svg id="runner-svg" viewBox="0 0 200 300" width="140" height="210">
           <circle cx="100" cy="150" r="90" fill="#0f172a" stroke="#334155" stroke-width="2"/>
           <circle cx="100" cy="65" r="18" fill="#cbd5e1" id="svg-head"/>
