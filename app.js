@@ -2,8 +2,8 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
-// Opret klienten direkte som en global variabel uden 'const'
-window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Opret databaseklienten korrekt ved hjælp af CDN'ets .createClient
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
 let wardrobeData = [];
@@ -65,7 +65,7 @@ function setupEventListeners() {
 // 1. Feedback Offset (ML)
 async function fetchPersonalFeedbackOffset() {
   try {
-    const { data } = await window.supabase
+    const { data } = await db
       .from('outfit_feedback')
       .select('rating')
       .order('created_at', { ascending: false })
@@ -420,7 +420,7 @@ function getIdealWarmth(temp) {
 
 // 5. Klædeskab & Vaskestatus
 async function loadWardrobe() {
-  const { data, error } = await window.supabase.from('wardrobe').select('*');
+  const { data, error } = await db.from('wardrobe').select('*');
   if (!error && data) {
     wardrobeData = data;
     renderWardrobe(wardrobeData);
@@ -452,7 +452,7 @@ function renderWardrobe(items) {
 }
 
 async function toggleWash(id, status) {
-  await window.supabase.from('wardrobe').update({ in_wash: status }).eq('id', id);
+  await db.from('wardrobe').update({ in_wash: status }).eq('id', id);
   await loadWardrobe();
 }
 
@@ -477,7 +477,7 @@ async function sendFeedback() {
   const rating = selectedBtn.dataset.rating;
   const comment = document.getElementById('fb-comment').value;
 
-  const { error } = await window.supabase.from('outfit_feedback').insert([{
+  const { error } = await db.from('outfit_feedback').insert([{
     rating,
     feels_like_temp: currentWeatherData ? currentWeatherData.effectiveTemp : null,
     comment
