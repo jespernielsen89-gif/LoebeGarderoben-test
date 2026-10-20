@@ -2,7 +2,7 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
 
-// Opret databaseklienten korrekt via CDN
+// Opret databaseklienten via CDN uden navnekonflikter
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
@@ -31,6 +31,10 @@ function setupEventListeners() {
   document.getElementById('close-modal').addEventListener('click', () => {
     document.getElementById('wishlist-modal').classList.add('hidden');
   });
+
+  // Kamera / Foto Upload Event-Listeners
+  document.getElementById('camera-input').addEventListener('change', handleImageUpload);
+  document.getElementById('btn-save-new-item').addEventListener('click', saveNewItemToSupabase);
 
   document.getElementById('saved-routes').addEventListener('change', (e) => {
     const selectedRoute = e.target.value;
@@ -87,7 +91,7 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr (Med indbygget beskyttelse mod forkerte Sydamerika-koordinater)
+// 2. Geolocation & Vejr (Med beskyttelse mod Sydamerika-koordinater -> Fredericia Fallback)
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
@@ -97,9 +101,9 @@ function getLocationWeather() {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
 
-        // Hvis browseren returnerer forkerte/negative breddegrader (som peger på Brasilien), tving Fredericia
+        // Tving Fredericia hvis GPS returnerer ugyldige/negative breddegrader
         if (lat < 0) {
-          console.warn("Ugyldige GPS-koordinater modtaget. Bruger Fredericia i stedet.");
+          console.warn("Ugyldige GPS-koordinater. Bruger Fredericia.");
           cityInput.value = "Fredericia";
           fetchWeather(55.5657, 9.7583);
         } else {
@@ -370,7 +374,7 @@ function generateAutomaticOutfit() {
   document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.brand || ''} ${baseLayer.sub_category} (Varmegrad: ${baseLayer.warmth_level}/5)` : 'Ingen fundet i skabet';
   document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.brand || ''} ${midLayer.sub_category} (Varmegrad: ${midLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
   document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.brand || ''} ${outerLayer.sub_category} (Varmegrad: ${outerLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-extra').innerText = `${extraLayer.brand || ''} ${extraLayer.sub_category || extraLayer.name}`;
+  document.getElementById('layer-extra').innerText = `${extraLayer.brand || ''} ${extraLayer.sub_category || 'Standard løbetights'}`;
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
   document.getElementById('outfit-result').classList.remove('hidden');
@@ -426,7 +430,7 @@ function getIdealWarmth(temp) {
   return 1;
 }
 
-// 5. Klædeskab & Vaskestatus (Bruger 'user_wardrobe' og 'warmth_level')
+// 5. Klædeskab & Vaskestatus (Læser direkte fra 'user_wardrobe')
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -473,6 +477,69 @@ function filterWardrobe(filter) {
     renderWardrobe(wardrobeData.filter(i => i.in_wash));
   } else {
     renderWardrobe(wardrobeData);
+  }
+}
+
+// 5b. Foto & Billede Upload til nyt tøj i Supabase
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const previewImg = document.getElementById('image-preview');
+    previewImg.src = e.target.result;
+    
+    document.getElementById('image-upload-preview-container').classList.remove('hidden');
+    document.getElementById('new-item-brand').value = '';
+    document.getElementById('new-item-sub-category').value = '';
+    document.getElementById('upload-status').innerText = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveNewItemToSupabase() {
+  const brand = document.getElementById('new-item-brand').value.trim() || 'Ukendt brand';
+  const category = document.getElementById('new-item-category').value;
+  const subCategory = document.getElementById('new-item-sub-category').value.trim() || 'Løbetøj';
+  const warmthLevel = parseInt(document.getElementById('new-item-warmth').value) || 3;
+  const statusEl = document.getElementById('upload-status');
+
+  statusEl.innerText = "Gemmer nyt tøj i Supabase...";
+  statusEl.style.color = "var(--text-muted)";
+
+  try {
+    const { data, error } = await db
+      .from('user_wardrobe')
+      .insert([
+        {
+          brand: brand,
+          category: category,
+          sub_category: subCategory,
+          warmth_level: warmthLevel,
+          in_wash: false
+        }
+      ]);
+
+    if (error) {
+      console.error("Fejl ved gem af tøj:", error);
+      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet. Tjek RLS-rettigheder.";
+      statusEl.style.color = "var(--danger)";
+    } else {
+      statusEl.innerText = "✅ Tøj blev gemt i dit klædeskab!";
+      statusEl.style.color = "var(--secondary)";
+
+      setTimeout(() => {
+        document.getElementById('image-upload-preview-container').classList.add('hidden');
+        document.getElementById('camera-input').value = '';
+      }, 1500);
+
+      await loadWardrobe();
+    }
+  } catch (e) {
+    console.error("Exception:", e);
+    statusEl.innerText = "❌ Systemfejl ved gem af tøj.";
+    statusEl.style.color = "var(--danger)";
   }
 }
 
