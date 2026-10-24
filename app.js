@@ -34,17 +34,6 @@ function setupEventListeners() {
   document.getElementById('gallery-input').addEventListener('change', handleImageUpload);
   document.getElementById('btn-save-new-item').addEventListener('click', saveNewItemToSupabase);
 
-  document.getElementById('saved-routes').addEventListener('change', (e) => {
-    const selectedRoute = e.target.value;
-    if (selectedRoute === 'route1') {
-      document.getElementById('route-environment').value = 'sheltered';
-      alert("Valgt: Skov- og Lætur. Rute-miljø opdateret til 'Læ / Skov'.");
-    } else if (selectedRoute === 'route2') {
-      document.getElementById('route-environment').value = 'open';
-      alert("Valgt: Kysten. Rute-miljø opdateret til 'Åbent land / Kyst'.");
-    }
-  });
-
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -521,7 +510,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-// 5. Klædeskab (Bruger 'user_wardrobe' uden mellemrum)
+// 5. Klædeskab (Sikret mod mellemrum i tabeller)
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
