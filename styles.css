@@ -395,3 +395,86 @@ input:focus, select:focus, textarea:focus {
 .hidden {
   display: none !important;
 }
+/* === UX v4.1 Opgraderinger === */
+
+/* Sticky Bottom Bar for Mobil */
+.sticky-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+}
+
+.sticky-bottom-bar .btn {
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+/* Plads i bunden af container så sticky knap ikke dækker for indhold */
+.container {
+  padding-bottom: 90px;
+}
+
+/* Toast Notifikationer */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1e293b;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1001;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Animations mod Layout Shift */
+.fade-in-section {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fremhævet Hero-look til Vejr og Outfit */
+.weather-hero-temp {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #38bdf8;
+  line-height: 1;
+}
+
+.hero-outfit-card {
+  background: linear-gradient(135deg, rgba(30,58,138,0.3) 0%, rgba(15,23,42,0.6) 100%);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 12px;
+  padding: 16px;
+}
