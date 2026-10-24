@@ -2,16 +2,8 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwbliCJyNQ_Fexy6WA4";
 
-// Opret Supabase-klient med godkendelses-headers
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
-  global: {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-    }
-  }
-});
+// Opret Supabase-klient rent med den nye publishable key
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
 let wardrobeData = [];
@@ -433,7 +425,6 @@ function generateAutomaticOutfit() {
   const cleanWardrobe = wardrobeData.filter(i => !i.in_wash);
   const isRaining = currentWeatherData.rainProb > 30;
 
-  // 1. Tjek om Yderlag / Jakke er påkrævet (Regn eller < 5°C)
   let outerLayer = null;
   if (isRaining || scoreTemp < 5) {
     const outerCandidateItems = cleanWardrobe.filter(i => (i.category === 'overdel' || i.category === 'yderlag') && !isAccessory(i));
@@ -441,25 +432,20 @@ function generateAutomaticOutfit() {
     outerLayer = findBestItemAny(outerCandidateItems, searchKeywords, scoreTemp);
   }
 
-  // 2. Regnjakke-korrektion: En jakke skaber ekstra isolering
   let baseScoreTemp = scoreTemp;
   if (outerLayer) {
     baseScoreTemp += 2.5; 
   }
 
-  // 3. Inderlag (Vurderes ud fra baseScoreTemp)
   const baseCandidateItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
   const baseLayer = findBestItemAny(baseCandidateItems, ['base', 'inder', 'trøje', 'langærmet', 't-shirt', 'kortærmet'], baseScoreTemp);
 
-  // 4. Mellemlag
   const midCandidateItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
   const midLayer = (scoreTemp < 8 && !outerLayer) ? findBestItemAny(midCandidateItems, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
 
-  // 5. Ben (Underdel)
   const legCandidateItems = cleanWardrobe.filter(i => i.category === 'underdel' && !isAccessory(i));
   const legLayer = findBestItemAny(legCandidateItems, ['tights', 'bukser', 'shorts'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
 
-  // 6. Tilbehør
   let selectedAccessories = [];
   if (scoreTemp < 10) {
     const accessories = cleanWardrobe.filter(i => isAccessory(i));
@@ -535,7 +521,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-// 5. Klædeskab - RETTET SKEMA OG TABELNAVN TIL 'user_wardrobe'
+// 5. Klædeskab
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -630,7 +616,7 @@ async function handleImageUpload(event) {
   reader.readAsDataURL(file);
 }
 
-// Kald Supabase Edge Function med Authorization Header
+// Kald Supabase Edge Function (Standard Supabase JS fetch/auth eller ren publishable key header)
 async function analyzeImageWithEdgeFunction(base64Image, mimeType) {
   const functionUrl = `${SUPABASE_URL}/functions/v1/analyze-clothing`;
 
@@ -638,7 +624,6 @@ async function analyzeImageWithEdgeFunction(base64Image, mimeType) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
     },
     body: JSON.stringify({
