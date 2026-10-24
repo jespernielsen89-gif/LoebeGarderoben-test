@@ -78,7 +78,7 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr
+// 2. Geolocation & Vejr (Understøtter op til 24t frem)
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
@@ -388,7 +388,7 @@ function getIdealWarmth(temp) {
   return 1;                 
 }
 
-// 4. Automatisk Outfit-Matching med Regnjakke-Korrektion
+// 4. Automatisk Outfit-Matching
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
     alert("Hent venligst vejret først!");
@@ -510,7 +510,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-// 5. Klædeskab (Sikret mod mellemrum i tabeller)
+// 5. Klædeskab (Bruger 'user_wardrobe')
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -653,7 +653,7 @@ async function saveNewItemToSupabase() {
 
     if (error) {
       console.error("Fejl ved gem af tøj:", error);
-      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet. Tjek SQL RLS i Supabase.";
+      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet.";
       statusEl.style.color = "var(--danger)";
     } else {
       statusEl.innerText = "✅ Tøj blev gemt i dit klædeskab!";
@@ -719,5 +719,5 @@ function generateWishlist() {
   }
 
   const modal = document.getElementById('wishlist-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) modal.classList.open = modal.classList.remove('hidden');
 }
