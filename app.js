@@ -616,7 +616,7 @@ async function handleImageUpload(event) {
   reader.readAsDataURL(file);
 }
 
-// Kald Supabase Edge Function (Standard Supabase JS fetch/auth eller ren publishable key header)
+// Kald Supabase Edge Function
 async function analyzeImageWithEdgeFunction(base64Image, mimeType) {
   const functionUrl = `${SUPABASE_URL}/functions/v1/analyze-clothing`;
 
