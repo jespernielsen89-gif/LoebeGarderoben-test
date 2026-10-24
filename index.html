@@ -3,210 +3,202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LøbeGarderoben v3.0</title>
+  <title>LøbeGarderoben v4.0</title>
   
-  <link rel="stylesheet" href="styles.css?v=5.0">
+  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css?v=4.0">
 </head>
 <body>
+
   <div class="container">
     <header>
-      <h1>LøbeGarderoben 🏃‍♂️</h1>
-      <p class="subtitle">Din intelligente vejviser til det perfekte løbeoutfit</p>
+      <h1>🏃‍♂️ LøbeGarderoben v4.0</h1>
+      <p class="subtitle">Intelligent påklædning til din løbetur</p>
     </header>
 
+    <!-- Vejr & Lokation Sektion -->
     <section class="card">
-      <h2>1. Vejr & Rute</h2>
+      <h2>1. Vælg tid og lokation</h2>
       <div class="input-group">
-        <input type="text" id="city-search" placeholder="Indtast by eller hent GPS..." />
-        <button id="btn-location" class="btn outline">📍 GPS</button>
-        <button id="btn-search-city" class="btn">Søg</button>
+        <input type="text" id="city-search" placeholder="Indtast by (f.eks. Fredericia)...">
+        <button id="btn-search-city" class="btn primary">Søg</button>
+        <button id="btn-location" class="btn outline">📍 Brug GPS</button>
       </div>
 
-      <div class="row-selectors">
-        <div class="select-wrapper">
-          <label for="route-environment">Rute-miljø:</label>
-          <select id="route-environment">
-            <option value="sheltered">Læ / Skov</option>
-            <option value="open">Åbent land / Kyst</option>
-          </select>
-        </div>
-
-        <div class="select-wrapper">
-          <label for="route-type">Løbepace:</label>
-          <select id="route-type">
-            <option value="almindelig">Almindelig / Rolig</option>
-            <option value="tempo">Tempo / Interval</option>
-          </select>
-        </div>
-
-        <div class="select-wrapper">
-          <label for="forecast-time">Tidspunkt:</label>
-          <select id="forecast-time">
-            <option value="0">Lige nu</option>
-            <option value="1">Om 1 time</option>
-            <option value="2">Om 2 timer</option>
-            <option value="3">Om 3 timer</option>
-          </select>
-        </div>
-
-        <div class="select-wrapper">
-          <label for="sensitivity">Temperatur-følsomhed:</label>
-          <select id="sensitivity">
-            <option value="normal">Normal (Standard)</option>
-            <option value="frysende">Fryser let (Klæd varmere på)</option>
-            <option value="varm">Sveder let (Klæd lettere på)</option>
-          </select>
-        </div>
+      <div class="input-group" style="margin-top: 12px;">
+        <label for="forecast-time">Planlæg tidspunkt:</label>
+        <select id="forecast-time" class="select-field">
+          <option value="0">Lige nu (+0t)</option>
+          <option value="1">Om 1 time (+1t)</option>
+          <option value="2">Om 2 timer (+2t)</option>
+          <option value="3">Om 3 timer (+3t)</option>
+          <option value="6">Om 6 timer (+6t)</option>
+          <option value="12">Om 12 timer (+12t)</option>
+          <option value="18">Om 18 timer (+18t)</option>
+          <option value="24">Om 24 timer (+24t)</option>
+        </select>
       </div>
 
-      <div class="gpx-upload-box">
-        <label for="garmin-file-input" class="btn outline small">📂 Importer Garmin (.gpx)</label>
-        <input type="file" id="garmin-file-input" accept=".gpx" style="display: none;" />
-        <button id="btn-parse-garmin" class="btn small">Analyser Rute</button>
+      <div class="input-group" style="margin-top: 12px;">
+        <label for="route-environment">Rute-miljø:</label>
+        <select id="route-environment" class="select-field">
+          <option value="sheltered">Læ / By / Skov</option>
+          <option value="open">Åbent / Kyst / Vinden blæser</option>
+        </select>
+
+        <label for="route-type" style="margin-left: 10px;">Intensitet:</label>
+        <select id="route-type" class="select-field">
+          <option value="almindelig">Almindelig / Moderat</option>
+          <option value="tempo">Tempo / Interval (varmere)</option>
+          <option value="rolig">Rolig / Restitution (koldere)</option>
+        </select>
       </div>
 
-      <div id="garmin-result" class="hidden info-box">
-        <p><strong>GPX Rute:</strong> <span id="g-distance">0</span> km</p>
-        <p id="g-time"></p>
-        <div id="route-map-container" class="hidden">
-          <svg id="route-svg" viewBox="0 0 300 150" width="100%" height="120">
-            <path id="route-path" d="" fill="none" stroke="var(--secondary)" stroke-width="3" />
-          </svg>
-          <p id="route-summary-text" class="text-muted"></p>
+      <!-- Garmin / GPX Upload -->
+      <div class="gpx-upload-box" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+        <label for="garmin-file-input">📁 Importér GPX-rute (f.eks. fra Garmin):</label>
+        <input type="file" id="garmin-file-input" accept=".gpx">
+        <button id="btn-parse-garmin" class="btn outline small" style="margin-top: 5px;">Analyser GPX</button>
+        <div id="garmin-result" class="hidden" style="font-size: 0.9rem; margin-top: 8px; color: var(--secondary);">
+          📍 Længde: <span id="g-distance">0</span> km | <span id="g-time"></span>
         </div>
       </div>
 
-      <div id="weather-info" class="hidden weather-result">
+      <!-- Vejr Resultater -->
+      <div id="weather-info" class="weather-box hidden" style="margin-top: 15px;">
         <div class="weather-main">
-          <span id="weather-temp">--°C</span>
+          <span id="weather-temp" class="temp">--°C</span>
           <div>
-            <h4 id="weather-desc">Venter på vejr...</h4>
-            <p id="weather-sub">--</p>
+            <div id="weather-desc" class="desc">Henter vejr...</div>
+            <div id="weather-sub" class="sub">Vind: -- | Regn: --</div>
           </div>
         </div>
         <div id="weather-badges" class="badges"></div>
-        <div id="sunset-box" class="sunset-box hidden">
-          <p id="sunset-text">☀️ Solnedgang kl. --:--</p>
+        <div id="sunset-box" class="sunset-info hidden">
+          <span id="sunset-text"></span>
         </div>
         <div id="smart-tips" class="smart-tips hidden"></div>
       </div>
-
-      <button id="btn-generate" class="btn primary full-width">Generer Optimalt Outfit 👕</button>
     </section>
 
-    <section id="outfit-result" class="card hidden">
-      <h2>2. Dagens Anbefalede Outfit</h2>
-      
-      <div class="outfit-layers">
-        <div class="layer-item">
-          <strong>🧥 Yderlag / Jakke:</strong>
-          <span id="layer-outer">Ikke nødvendigt</span>
-        </div>
-        <div class="layer-item">
-          <strong>👕 Inderlag:</strong>
-          <span id="layer-base">Henter...</span>
-        </div>
-        <div class="layer-item">
-          <strong>🧶 Mellemlag:</strong>
-          <span id="layer-mid">Ikke nødvendigt</span>
-        </div>
-        <div class="layer-item">
-          <strong>👖 Underdel (Ben):</strong>
-          <span id="layer-legs">Henter...</span>
-        </div>
-        <div class="layer-item">
-          <strong>🧣 Tilbehør:</strong>
-          <span id="layer-accessories">Ikke nødvendigt</span>
-        </div>
-      </div>
-
-      <div id="runner-avatar-container" class="avatar-container hidden">
-        <svg viewBox="0 0 100 160" width="90" height="140">
-          <circle cx="50" cy="20" r="12" fill="#fbcfe8" />
-          <path id="svg-hat" class="hidden" d="M 35 15 Q 50 5 65 15 L 70 20 L 30 20 Z" fill="#0284c7" />
-          <rect id="svg-torso" x="35" y="35" width="30" height="50" rx="6" fill="#2563eb" />
-          <line x1="35" y1="40" x2="15" y2="65" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
-          <line x1="65" y1="40" x2="85" y2="65" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
-          <line x1="42" y1="85" x2="35" y2="135" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
-          <line x1="58" y1="85" x2="65" y2="135" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
-        </svg>
-        <p id="avatar-status-text" class="text-muted"></p>
-      </div>
-
-      <div class="feedback-box">
-        <p>Hvordan fungerede påklædningen på turen?</p>
-        <div class="feedback-btns">
-          <button class="btn outline btn-fb" data-rating="too_cold">🥶 For koldt</button>
-          <button class="btn outline btn-fb" data-rating="perfect">✨ Perfekt</button>
-          <button class="btn outline btn-fb" data-rating="too_warm">🥵 For varmt</button>
-        </div>
-        <textarea id="fb-comment" placeholder="Valgfri kommentar (f.eks. modvind på kysten)..." rows="2"></textarea>
-        <button id="btn-send-fb" class="btn small">Gem Feedback</button>
-        <p id="fb-status" class="status-msg"></p>
-      </div>
-    </section>
-
+    <!-- Generer Outfit Sektion -->
     <section class="card">
-      <div class="card-header-flex">
-        <h2>4. Mit Klædeskab</h2>
-        <button id="btn-wishlist" class="btn outline small">🎁 Generer Ønskeseddel</button>
+      <h2>2. Dagens Outfit-anbefaling</h2>
+      <div class="input-group">
+        <label for="sensitivity">Temperatur-følsomhed:</label>
+        <select id="sensitivity" class="select-field">
+          <option value="normal">Normal</option>
+          <option value="frysende">Fryser let (-3°C kompensation)</option>
+          <option value="varm">Sveder let (+3°C kompensation)</option>
+        </select>
       </div>
+      <button id="btn-generate" class="btn primary full" style="margin-top: 15px;">✨ Generer Outfit</button>
 
-      <div class="add-item-box">
-        <p><strong>Tilføj nyt løbetøj:</strong></p>
-        <div class="upload-actions">
-          <label for="camera-input" class="btn outline">📷 Tag foto</label>
-          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
-          
-          <label for="gallery-input" class="btn outline">📁 Vælg galleri</label>
-          <input type="file" id="gallery-input" accept="image/*" style="display: none;" />
+      <!-- Outfit Resultat -->
+      <div id="outfit-result" class="outfit-box hidden" style="margin-top: 15px;">
+        <h3>Anbefalede lag:</h3>
+        <ul class="outfit-list">
+          <li><strong>Inderlag (Base):</strong> <span id="layer-base">-</span></li>
+          <li><strong>Mellemlag (Mid):</strong> <span id="layer-mid">-</span></li>
+          <li><strong>Yderlag (Outer):</strong> <span id="layer-outer">-</span></li>
+          <li><strong>Underdel:</strong> <span id="layer-legs">-</span></li>
+          <li><strong>Tilbehør:</strong> <span id="layer-accessories">-</span></li>
+        </ul>
+
+        <!-- Løber Avatar Visualisering -->
+        <div id="runner-avatar-container" class="avatar-container hidden">
+          <svg id="runner-svg" viewBox="0 0 100 120" width="80" height="100">
+            <!-- Hoved & Krop -->
+            <circle cx="50" cy="20" r="10" fill="#cbd5e1" />
+            <path id="svg-hat" class="hidden" d="M 38 15 Q 50 5 62 15 Z" fill="#e11d48" />
+            <rect id="svg-torso" x="35" y="32" width="30" height="40" rx="5" fill="#2563eb" />
+            <line x1="35" y1="72" x2="25" y2="100" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+            <line x1="65" y1="72" x2="75" y2="100" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+            <line x1="42" y1="72" x2="38" y2="110" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+            <line x1="58" y1="72" x2="62" y2="110" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+          </svg>
+          <p id="avatar-status-text" class="avatar-text">Klar til løb</p>
         </div>
 
-        <div id="image-upload-preview-container" class="hidden preview-box">
-          <img id="image-preview" src="" alt="Tøj eksempel" />
-          <div class="form-grid">
-            <input type="text" id="new-item-brand" placeholder="Mærke (Brand) f.eks. Fusion" />
-            <select id="new-item-category">
-              <option value="overdel">Overdel / Jakke</option>
-              <option value="underdel">Underdel (Ben)</option>
+        <!-- Feedback på outfit -->
+        <div class="feedback-section" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+          <p>Hvordan fungerede outfittet?</p>
+          <div class="feedback-btns">
+            <button class="btn outline small btn-fb" data-rating="too_cold">❄️ For koldt</button>
+            <button class="btn outline small btn-fb" data-rating="perfect">🎯 Perfekt</button>
+            <button class="btn outline small btn-fb" data-rating="too_warm">🔥 For varmt</button>
+          </div>
+          <input type="text" id="fb-comment" placeholder="Valgfri kommentar..." style="margin-top: 8px; width: 100%; padding: 6px;">
+          <button id="btn-send-fb" class="btn secondary small" style="margin-top: 5px;">Gem Feedback</button>
+          <p id="fb-status" style="font-size: 0.85rem; margin-top: 5px;"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Klædeskab Sektion -->
+    <section class="card">
+      <h2>3. Dit Klædeskab</h2>
+      
+      <!-- Tilføj nyt tøj via AI -->
+      <div class="add-item-box" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+        <h3>📸 Tilføj nyt tøj med AI</h3>
+        <div class="input-group">
+          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+          <input type="file" id="gallery-input" accept="image/*" style="display:none;">
+          <button class="btn outline" onclick="document.getElementById('camera-input').click()">📷 Tag billede</button>
+          <button class="btn outline" onclick="document.getElementById('gallery-input').click()">🖼️ Vælg fra galleri</button>
+        </div>
+
+        <div id="image-upload-preview-container" class="hidden" style="margin-top: 10px;">
+          <img id="image-preview" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 6px;">
+          <p id="upload-status" style="font-size: 0.9rem; color: var(--accent);">Klargør billede...</p>
+          
+          <div class="manual-form" style="margin-top: 10px;">
+            <input type="text" id="new-item-brand" placeholder="Brand (f.eks. Fusion, Nike)" style="width: 100%; margin-bottom: 5px; padding: 6px;">
+            <select id="new-item-category" style="width: 100%; margin-bottom: 5px; padding: 6px;">
+              <option value="overdel">Overdel</option>
+              <option value="underdel">Underdel</option>
               <option value="tilbehoer">Tilbehør</option>
             </select>
-            <input type="text" id="new-item-sub-category" placeholder="Underkat. f.eks. Tights, Jakke" />
-            <select id="new-item-warmth">
-              <option value="1">1 - Sommer / Tynd</option>
-              <option value="2">2 - Forår / Let</option>
-              <option value="3" selected>3 - Efterår / Standard</option>
-              <option value="4">4 - Vinter / Varm</option>
-              <option value="5">5 - Ekstrem Vinter / Uld</option>
-            </select>
-            <button id="btn-save-new-item" class="btn primary">💾 Gem tøj i klædeskabet</button>
+            <input type="text" id="new-item-sub-category" placeholder="Beskrivelse (f.eks. Jakke, Tights)" style="width: 100%; margin-bottom: 5px; padding: 6px;">
+            <label for="new-item-warmth">Varmegrad (1-5):</label>
+            <input type="number" id="new-item-warmth" min="1" max="5" value="3" style="width: 100%; margin-bottom: 10px; padding: 6px;">
+            <button id="btn-save-new-item" class="btn primary small full">Gem i Klædeskab</button>
           </div>
-          <p id="upload-status" class="status-msg"></p>
         </div>
       </div>
 
-      <div class="wardrobe-filters">
-        <button class="btn outline small filter-btn active" data-filter="all">Alt</button>
-        <button class="btn outline small filter-btn" data-filter="clean">Klar i skabet</button>
-        <button class="btn outline small filter-btn" data-filter="wash">Til vask</button>
+      <!-- Filtre -->
+      <div class="wardrobe-filters" style="margin-bottom: 10px;">
+        <button class="filter-btn active" data-filter="all">Alt</button>
+        <button class="filter-btn" data-filter="clean">Rent</button>
+        <button class="filter-btn" data-filter="wash">Til vask 🧺</button>
       </div>
 
       <div id="wardrobe-list" class="wardrobe-grid">
-        <p class="empty-msg">Henter dit klædeskab...</p>
+        <p class="empty-msg">Indlæser klædeskab...</p>
       </div>
+    </section>
+
+    <!-- Ønskeseddel Knap -->
+    <section class="card" style="text-align: center;">
+      <button id="btn-wishlist" class="btn outline">🛍️ Se AI Ønskeseddel</button>
     </section>
   </div>
 
+  <!-- Modal til Ønskeseddel -->
   <div id="wishlist-modal" class="modal hidden">
     <div class="modal-content">
       <span id="close-modal" class="close">&times;</span>
-      <h3>🎁 Din Personlige Ønskeseddel</h3>
-      <p>Baseret på mangler i dit nuværende setup og vejrforholdene i Danmark:</p>
+      <h2>🛍️ Din AI Ønskeseddel</h2>
       <div id="wishlist-items"></div>
     </div>
   </div>
 
-  <script src="app.js?v=5.0"></script>
+  <!-- JavaScript -->
+  <script src="app.js?v=4.0"></script>
 </body>
 </html>
