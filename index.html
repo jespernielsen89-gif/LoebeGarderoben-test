@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LøbeGarderoben v3.0</title>
   
-  <!-- CSS Stylesheet med cache-busting -->
   <link rel="stylesheet" href="styles.css?v=3.0">
-  
-  <!-- Supabase JS Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -18,7 +15,6 @@
       <p class="subtitle">Din intelligente vejviser til det perfekte løbeoutfit</p>
     </header>
 
-    <!-- 1. Vejr & Lokation Sektion -->
     <section class="card">
       <h2>1. Vejr & Rute</h2>
       <div class="input-group">
@@ -64,7 +60,6 @@
         </div>
       </div>
 
-      <!-- Garmin GPX Import -->
       <div class="gpx-upload-box">
         <label for="garmin-file-input" class="btn outline small">📂 Importer Garmin (.gpx)</label>
         <input type="file" id="garmin-file-input" accept=".gpx" style="display: none;" />
@@ -82,7 +77,6 @@
         </div>
       </div>
 
-      <!-- Vejr Resultater -->
       <div id="weather-info" class="hidden weather-result">
         <div class="weather-main">
           <span id="weather-temp">--°C</span>
@@ -101,7 +95,6 @@
       <button id="btn-generate" class="btn primary full-width">Generer Optimalt Outfit 👕</button>
     </section>
 
-    <!-- 2. Outfit Resultat Sektion -->
     <section id="outfit-result" class="card hidden">
       <h2>2. Dagens Anbefalede Outfit</h2>
       
@@ -128,25 +121,19 @@
         </div>
       </div>
 
-      <!-- Løber Avatar Visualisering -->
       <div id="runner-avatar-container" class="avatar-container hidden">
         <svg viewBox="0 0 100 160" width="90" height="140">
-          <!-- Hoved & Hat -->
           <circle cx="50" cy="20" r="12" fill="#fbcfe8" />
           <path id="svg-hat" class="hidden" d="M 35 15 Q 50 5 65 15 L 70 20 L 30 20 Z" fill="#0284c7" />
-          <!-- Torso -->
           <rect id="svg-torso" x="35" y="35" width="30" height="50" rx="6" fill="#2563eb" />
-          <!-- Arme -->
           <line x1="35" y1="40" x2="15" y2="65" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
           <line x1="65" y1="40" x2="85" y2="65" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
-          <!-- Ben -->
           <line x1="42" y1="85" x2="35" y2="135" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
           <line x1="58" y1="85" x2="65" y2="135" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
         </svg>
         <p id="avatar-status-text" class="text-muted"></p>
       </div>
 
-      <!-- Feedback Modul -->
       <div class="feedback-box">
         <p>Hvordan fungerede påklædningen på turen?</p>
         <div class="feedback-btns">
@@ -160,14 +147,12 @@
       </div>
     </section>
 
-    <!-- 3. Klædeskab Sektion -->
     <section class="card">
       <div class="card-header-flex">
         <h2>4. Mit Klædeskab</h2>
         <button id="btn-wishlist" class="btn outline small">🎁 Generer Ønskeseddel</button>
       </div>
 
-      <!-- Tilføj nyt tøj via billede eller formular -->
       <div class="add-item-box">
         <p><strong>Tilføj nyt løbetøj:</strong></p>
         <div class="upload-actions">
@@ -201,21 +186,18 @@
         </div>
       </div>
 
-      <!-- Filtre til klædeskab -->
       <div class="wardrobe-filters">
         <button class="btn outline small filter-btn active" data-filter="all">Alt</button>
         <button class="btn outline small filter-btn" data-filter="clean">Klar i skabet</button>
         <button class="btn outline small filter-btn" data-filter="wash">Til vask</button>
       </div>
 
-      <!-- Liste over tøj fra Supabase -->
       <div id="wardrobe-list" class="wardrobe-grid">
         <p class="empty-msg">Henter dit klædeskab...</p>
       </div>
     </section>
   </div>
 
-  <!-- Ønskeseddel Modal -->
   <div id="wishlist-modal" class="modal hidden">
     <div class="modal-content">
       <span id="close-modal" class="close">&times;</span>
@@ -225,7 +207,6 @@
     </div>
   </div>
 
-  <!-- JavaScript App med cache-busting -->
   <script src="app.js?v=4.0"></script>
 </body>
 </html>
