@@ -2,16 +2,8 @@
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwbliCJyNQ_Fexy6WA4";
 
-// Opret Supabase-klient med globale headers for at undgå 401 Unauthorized fejl[cite: 5]
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
-  global: {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-    }
-  }
-});
+// Opret Supabase-klient
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
 let wardrobeData = [];
@@ -387,7 +379,7 @@ function renderRouteSvg(coords, minLat, maxLat, minLon, maxLon) {
   if (mapContainer) mapContainer.classList.remove('hidden');
 }
 
-// Hjælpefunktion: Identificer om en genstand er tilbehør
+// Hjælpefunktion: Identificer om en genstand er tilbehør baseret på tabellens data
 function isAccessory(item) {
   const text = `${item.category || ''} ${item.sub_category || ''}`.toLowerCase();
   return item.category === 'tilbehoer' || 
@@ -399,7 +391,6 @@ function isAccessory(item) {
          text.includes('pandelampe');
 }
 
-// Opdateret Varmegrads-skala for aktive løbere
 function getIdealWarmth(temp) {
   if (temp < -5) return 5;
   if (temp < 2) return 4;
@@ -408,7 +399,7 @@ function getIdealWarmth(temp) {
   return 1;                 
 }
 
-// 4. Automatisk Outfit-Matching (inkl. Regnjakke-Isoleringskorrektion)
+// 4. Automatisk Outfit-Matching
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
     alert("Hent venligst vejret først!");
@@ -442,7 +433,7 @@ function generateAutomaticOutfit() {
     outerLayer = findBestItemAny(outerCandidateItems, searchKeywords, scoreTemp);
   }
 
-  // 2. REGNJAKKE-KORREKTION
+  // 2. Regnjakke-korrektion
   let baseScoreTemp = scoreTemp;
   if (outerLayer) {
     baseScoreTemp += 2.5; 
