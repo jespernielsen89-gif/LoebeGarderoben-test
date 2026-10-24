@@ -379,13 +379,28 @@ function renderRouteSvg(coords, minLat, maxLat, minLon, maxLon) {
   if (mapContainer) mapContainer.classList.remove('hidden');
 }
 
-// Hjælpefunktion: Identificer om en genstand er tilbehør (halsedisse, hue, m.m.)
+// Hjælpefunktion: Identificer om en genstand er tilbehør
 function isAccessory(item) {
   const text = `${item.category || ''} ${item.sub_category || ''}`.toLowerCase();
-  return item.category === 'tilbehoer' || text.includes('halsedisse') || text.includes('hue') || text.includes('handsker') || text.includes('vanter');
+  return item.category === 'tilbehoer' || 
+         text.includes('halsedisse') || 
+         text.includes('buff') || 
+         text.includes('hue') || 
+         text.includes('handsker') || 
+         text.includes('vanter') || 
+         text.includes('pandelampe');
 }
 
-// 4. Automatisk Outfit-Matching (inkl. Regn- & Tilbehørs-filtrering)
+// Opdateret Varmegrads-skala for aktive løbere
+function getIdealWarmth(temp) {
+  if (temp < -5) return 5;
+  if (temp < 2) return 4;
+  if (temp < 8) return 3;   // Kold vinter/tidligt forår
+  if (temp < 15) return 2;  // Milde dage (8-14°C) -> Foretrækker let/kortærmet
+  return 1;                 // Sommer / Varmt (15°C+)
+}
+
+// 4. Automatisk Outfit-Matching (inkl. Regnjakke-Isoleringskorrektion)
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
     alert("Hent venligst vejret først!");
@@ -402,6 +417,7 @@ function generateAutomaticOutfit() {
   const routeType = document.getElementById('route-type').value;
 
   let scoreTemp = currentWeatherData.effectiveTemp;
+
   if (sensitivityMod === 'frysende') scoreTemp -= 3;
   if (sensitivityMod === 'varm') scoreTemp += 3;
   if (routeType === 'tempo') scoreTemp += 3;
@@ -410,26 +426,46 @@ function generateAutomaticOutfit() {
   const cleanWardrobe = wardrobeData.filter(i => !i.in_wash);
   const isRaining = currentWeatherData.rainProb > 30;
 
-  // 1. Baselayer (Ekskluder tilbehør)
-  const baseItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
-  const baseLayer = findBestItemAny(baseItems, ['base', 'inder', 'trøje', 'langærmet', 't-shirt'], scoreTemp);
-
-  // 2. Midlayer (Kun ved koldere vejr, ekskluder tilbehør som halsedisser)
-  const midItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
-  const midLayer = (scoreTemp < 10) ? findBestItemAny(midItems, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
-
-  // 3. Outer Layer (Søges hvis regn eller under 5°C)
+  // 1. Tjek om Yderlag / Jakke er påkrævet (Regn eller < 5°C)
   let outerLayer = null;
   if (isRaining || scoreTemp < 5) {
-    const outerItems = cleanWardrobe.filter(i => !isAccessory(i));
+    const outerCandidateItems = cleanWardrobe.filter(i => (i.category === 'overdel' || i.category === 'yderlag') && !isAccessory(i));
     const searchKeywords = isRaining ? ['jakke', 'regn', 'skaljakke', 'wind', 'outer', 'vest'] : ['outer', 'jakke', 'wind', 'vest'];
-    outerLayer = findBestItemAny(outerItems, searchKeywords, scoreTemp);
+    outerLayer = findBestItemAny(outerCandidateItems, searchKeywords, scoreTemp);
   }
 
-  // 4. Ben & Tilbehør
-  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
+  // 2. REGNJAKKE-KORREKTION: En jakke isolerer og skaber læ.
+  // Hvis løberen bærer en jakke, trækker vi fra på behovet for inderlaget (+2.5°C til temperaturen)
+  let baseScoreTemp = scoreTemp;
+  if (outerLayer) {
+    baseScoreTemp += 2.5; 
+  }
 
-  // Tekst til yderlag
+  // 3. Inderlag (KUN rene overdele, vurderes ud fra baseScoreTemp)
+  const baseCandidateItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
+  const baseLayer = findBestItemAny(baseCandidateItems, ['base', 'inder', 'trøje', 'langærmet', 't-shirt', 'kortærmet'], baseScoreTemp);
+
+  // 4. Mellemlag (KUN ved koldere vejr < 8°C, og KUN hvis der ikke allerede er en jakke på)
+  const midCandidateItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
+  const midLayer = (scoreTemp < 8 && !outerLayer) ? findBestItemAny(midCandidateItems, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
+
+  // 5. Ben (KUN rene underdele)
+  const legCandidateItems = cleanWardrobe.filter(i => i.category === 'underdel' && !isAccessory(i));
+  const legLayer = findBestItemAny(legCandidateItems, ['tights', 'bukser', 'shorts'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
+
+  // 6. Tilbehør (KUN hvis køligt < 10°C)
+  let selectedAccessories = [];
+  if (scoreTemp < 10) {
+    const accessories = cleanWardrobe.filter(i => isAccessory(i));
+    if (accessories.length > 0) {
+      const bestAcc = findBestItemAny(accessories, ['halsedisse', 'buff', 'hue', 'handsker'], scoreTemp);
+      if (bestAcc) {
+        selectedAccessories.push(`${bestAcc.brand || ''} ${bestAcc.sub_category}`);
+      }
+    }
+  }
+
+  // Tekst til Yderlag
   let outerText = 'Ikke nødvendigt i dag';
   if (outerLayer) {
     outerText = `${outerLayer.brand || ''} ${outerLayer.sub_category} (Varmegrad: ${outerLayer.warmth_level}/5)${isRaining ? ' 🌧️ (Regnbeskyttelse)' : ''}`;
@@ -437,10 +473,17 @@ function generateAutomaticOutfit() {
     outerText = '🌧️ Regnvejr: Tilføj en regnjakke til dit klædeskab!';
   }
 
+  // Opdater elementer i DOM
   document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.brand || ''} ${baseLayer.sub_category} (Varmegrad: ${baseLayer.warmth_level}/5)` : 'Ingen fundet i skabet';
   document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.brand || ''} ${midLayer.sub_category} (Varmegrad: ${midLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
   document.getElementById('layer-outer').innerText = outerText;
-  document.getElementById('layer-extra').innerText = `${extraLayer.brand || ''} ${extraLayer.sub_category || 'Standard løbetights'}`;
+  
+  if (document.getElementById('layer-legs')) {
+    document.getElementById('layer-legs').innerText = `${legLayer.brand || ''} ${legLayer.sub_category} (Varmegrad: ${legLayer.warmth_level || 3}/5)`;
+  }
+  if (document.getElementById('layer-accessories')) {
+    document.getElementById('layer-accessories').innerText = selectedAccessories.length > 0 ? selectedAccessories.join(', ') : 'Ikke nødvendigt i dag';
+  }
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
   document.getElementById('outfit-result').classList.remove('hidden');
@@ -486,14 +529,6 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   } else {
     hat.classList.add('hidden');
   }
-}
-
-function getIdealWarmth(temp) {
-  if (temp < -5) return 5;
-  if (temp < 2) return 4;
-  if (temp < 8) return 3;
-  if (temp < 15) return 2;
-  return 1;
 }
 
 // 5. Klædeskab
