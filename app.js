@@ -1,8 +1,8 @@
-// === CONFIGURATION ==
+// === CONFIGURATION ===
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwblICJyNQ_Fexy6WA4";
+const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwbliCJyNQ_Fexy6WA4";
 
-// Opret databaseklienten via CDN uden navnekonflikter
+// Opret Supabase-klient
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
@@ -17,8 +17,6 @@ async function initApp() {
   await fetchPersonalFeedbackOffset();
   await loadWardrobe();
   setupEventListeners();
-  
-  // Standard ved opstart: Hent automatisk enhedens GPS (med sikker fallback til Fredericia)
   getLocationWeather();
 }
 
@@ -32,7 +30,6 @@ function setupEventListeners() {
     document.getElementById('wishlist-modal').classList.add('hidden');
   });
 
-  // Kamera & Galleri Event-Listeners
   document.getElementById('camera-input').addEventListener('change', handleImageUpload);
   document.getElementById('gallery-input').addEventListener('change', handleImageUpload);
   document.getElementById('btn-save-new-item').addEventListener('click', saveNewItemToSupabase);
@@ -92,7 +89,7 @@ async function fetchPersonalFeedbackOffset() {
   }
 }
 
-// 2. Geolocation & Vejr (Med beskyttelse mod Sydamerika-koordinater -> Fredericia Fallback)
+// 2. Geolocation & Vejr
 function getLocationWeather() {
   const cityInput = document.getElementById('city-search');
   if (navigator.geolocation) {
@@ -102,9 +99,7 @@ function getLocationWeather() {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
 
-        // Tving Fredericia hvis GPS returnerer ugyldige/negative breddegrader
         if (lat < 0) {
-          console.warn("Ugyldige GPS-koordinater. Bruger Fredericia.");
           cityInput.value = "Fredericia";
           fetchWeather(55.5657, 9.7583);
         } else {
@@ -112,8 +107,7 @@ function getLocationWeather() {
           fetchWeather(lat, lon);
         }
       }, 
-      (error) => {
-        console.warn("GPS-fejl eller adgang nægtet:", error);
+      () => {
         cityInput.value = "Fredericia";
         fetchWeather(55.5657, 9.7583);
       },
@@ -217,7 +211,7 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
 
   if (isDay === 0) tips.push("🔦 **Husk reflekser & pandelampe!** Turen foregår i mørke.");
   if (uv >= 3 && isDay === 1) tips.push("☀️ **Husk solcreme & solbriller!**");
-  if (rainProb > 40) tips.push("🌧️ **Høj regnrisiko!** Vælg vandafvisende yderlag.");
+  if (rainProb > 30) tips.push("🌧️ **Regn i farvandet!** Sørg for vandafvisende yderlag.");
 
   if (tips.length > 0) {
     tipsBox.innerHTML = tips.join('<br>');
@@ -227,7 +221,7 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
   }
 }
 
-// 3. Garmin / GPX Integration & Smart Forudfyldning
+// 3. Garmin / GPX Integration
 function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
   if (!fileInput || fileInput.files.length === 0) {
@@ -250,7 +244,7 @@ function handleGarminUpload() {
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Jordens radius i km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -267,8 +261,6 @@ function parseGpxContent(gpxText, fileName) {
     
     let trackPoints = xmlDoc.getElementsByTagNameNS('*', 'trkpt');
     if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('trkpt');
-    if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagNameNS('*', 'rtept');
-    if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('rtept');
 
     if (trackPoints.length === 0) {
       alert("Ingen punkter fundet i GPX-filen.");
@@ -314,17 +306,10 @@ function parseGpxContent(gpxText, fileName) {
       }
     }
 
-    // 1. RUTE-MILJØ ANALYSE (Kystnærhed)
     const isCoastalRute = coords.some(pt => pt.lon > 9.7550 || pt.lat > 55.5800);
     const envSelect = document.getElementById('route-environment');
-    
-    if (isCoastalRute) {
-      envSelect.value = 'open';
-    } else {
-      envSelect.value = 'sheltered';
-    }
+    envSelect.value = isCoastalRute ? 'open' : 'sheltered';
 
-    // 2. TEMPO ANALYSE
     const routeTypeSelect = document.getElementById('route-type');
     let paceMinPerKm = null;
 
@@ -355,17 +340,7 @@ function parseGpxContent(gpxText, fileName) {
       fetchWeather(coords[0].lat, coords[0].lon);
     }
 
-    let paceText = paceMinPerKm && !isNaN(paceMinPerKm) 
-      ? `• **Beregnet Tempo:** ${Math.floor(paceMinPerKm)}:${Math.round((paceMinPerKm % 1) * 60).toString().padStart(2, '0')} min/km ➔ Anbefalet: '${routeTypeSelect.value}'\n`
-      : '';
-
-    let recommendationMsg = `📍 **GPX Rute Indlæst** (${totalDistanceKm.toFixed(2)} km, +${Math.round(totalElevationGain)}m stigning)\n\n` +
-      `💡 **AI Anbefaling forudfylt:**\n` +
-      `• **Rute-miljø:** ${isCoastalRute ? 'Åbent land / Kyst (Vindfølsom)' : 'Læ / Skov'}\n` +
-      paceText +
-      `\nDu kan frit overstyre valgene i felterne ovenfor!`;
-
-    alert(recommendationMsg);
+    alert(`📍 GPX Rute Indlæst (${totalDistanceKm.toFixed(2)} km)\nRute-miljø forudfyldt baseret på kystnærhed.`);
 
   } catch (err) {
     console.error(err);
@@ -404,7 +379,13 @@ function renderRouteSvg(coords, minLat, maxLat, minLon, maxLon) {
   if (mapContainer) mapContainer.classList.remove('hidden');
 }
 
-// 4. Automatisk Outfit-Matching
+// Hjælpefunktion: Identificer om en genstand er tilbehør (halsedisse, hue, m.m.)
+function isAccessory(item) {
+  const text = `${item.category || ''} ${item.sub_category || ''}`.toLowerCase();
+  return item.category === 'tilbehoer' || text.includes('halsedisse') || text.includes('hue') || text.includes('handsker') || text.includes('vanter');
+}
+
+// 4. Automatisk Outfit-Matching (inkl. Regn- & Tilbehørs-filtrering)
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
     alert("Hent venligst vejret først!");
@@ -412,7 +393,7 @@ function generateAutomaticOutfit() {
   }
 
   if (!wardrobeData || wardrobeData.length === 0) {
-    alert("Henter klædeskab fra databasen... Prøv igen om et øjeblik.");
+    alert("Henter klædeskab... Prøv igen om et øjeblik.");
     loadWardrobe();
     return;
   }
@@ -427,15 +408,38 @@ function generateAutomaticOutfit() {
   if (routeType === 'rolig') scoreTemp -= 2;
 
   const cleanWardrobe = wardrobeData.filter(i => !i.in_wash);
+  const isRaining = currentWeatherData.rainProb > 30;
 
-  const baseLayer = findBestItemAny(cleanWardrobe, ['base', 'inder', 'trøje', 'langærmet', 't-shirt'], scoreTemp);
-  const midLayer = (scoreTemp < 10) ? findBestItemAny(cleanWardrobe, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
-  const outerLayer = (scoreTemp < 5) ? findBestItemAny(cleanWardrobe, ['outer', 'jakke', 'wind', 'vest'], scoreTemp) : null;
-  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts', 'accessory'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
+  // 1. Baselayer (Ekskluder tilbehør)
+  const baseItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
+  const baseLayer = findBestItemAny(baseItems, ['base', 'inder', 'trøje', 'langærmet', 't-shirt'], scoreTemp);
+
+  // 2. Midlayer (Kun ved koldere vejr, ekskluder tilbehør som halsedisser)
+  const midItems = cleanWardrobe.filter(i => i.category === 'overdel' && !isAccessory(i));
+  const midLayer = (scoreTemp < 10) ? findBestItemAny(midItems, ['mid', 'mellem', 'fleece', 'trøje'], scoreTemp) : null;
+
+  // 3. Outer Layer (Søges hvis regn eller under 5°C)
+  let outerLayer = null;
+  if (isRaining || scoreTemp < 5) {
+    const outerItems = cleanWardrobe.filter(i => !isAccessory(i));
+    const searchKeywords = isRaining ? ['jakke', 'regn', 'skaljakke', 'wind', 'outer', 'vest'] : ['outer', 'jakke', 'wind', 'vest'];
+    outerLayer = findBestItemAny(outerItems, searchKeywords, scoreTemp);
+  }
+
+  // 4. Ben & Tilbehør
+  const extraLayer = findBestItemAny(cleanWardrobe, ['tights', 'bukser', 'shorts'], scoreTemp) || { sub_category: 'Standard løbetights', warmth_level: 3 };
+
+  // Tekst til yderlag
+  let outerText = 'Ikke nødvendigt i dag';
+  if (outerLayer) {
+    outerText = `${outerLayer.brand || ''} ${outerLayer.sub_category} (Varmegrad: ${outerLayer.warmth_level}/5)${isRaining ? ' 🌧️ (Regnbeskyttelse)' : ''}`;
+  } else if (isRaining) {
+    outerText = '🌧️ Regnvejr: Tilføj en regnjakke til dit klædeskab!';
+  }
 
   document.getElementById('layer-base').innerText = baseLayer ? `${baseLayer.brand || ''} ${baseLayer.sub_category} (Varmegrad: ${baseLayer.warmth_level}/5)` : 'Ingen fundet i skabet';
   document.getElementById('layer-mid').innerText = midLayer ? `${midLayer.brand || ''} ${midLayer.sub_category} (Varmegrad: ${midLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
-  document.getElementById('layer-outer').innerText = outerLayer ? `${outerLayer.brand || ''} ${outerLayer.sub_category} (Varmegrad: ${outerLayer.warmth_level}/5)` : 'Ikke nødvendigt i dag';
+  document.getElementById('layer-outer').innerText = outerText;
   document.getElementById('layer-extra').innerText = `${extraLayer.brand || ''} ${extraLayer.sub_category || 'Standard løbetights'}`;
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
@@ -492,7 +496,7 @@ function getIdealWarmth(temp) {
   return 1;
 }
 
-// 5. Klædeskab & Vaskestatus (Læser fra 'user_wardrobe')
+// 5. Klædeskab
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -542,28 +546,72 @@ function filterWardrobe(filter) {
   }
 }
 
-// 5b. Foto & Billede Upload (Håndterer både kamera og galleri på iOS Safari)
-function handleImageUpload(event) {
+// 5b. Foto & Billede Upload via Supabase Edge Function
+async function handleImageUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
   const previewImg = document.getElementById('image-preview');
+  const statusEl = document.getElementById('upload-status');
+
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     previewImg.src = e.target.result;
     document.getElementById('image-upload-preview-container').classList.remove('hidden');
-    document.getElementById('new-item-brand').value = '';
-    document.getElementById('new-item-sub-category').value = '';
-    document.getElementById('upload-status').innerText = '';
-  };
+    
+    statusEl.innerText = "🤖 Gemini AI analyserer tøjet...";
+    statusEl.style.color = "var(--accent)";
 
-  reader.onerror = function(err) {
-    console.error("Kunne ikke læse billedet:", err);
-    alert("Fejl ved indlæsning af billedet. Prøv et andet foto.");
+    try {
+      const base64Data = e.target.result.split(',')[1];
+      const mimeType = file.type || 'image/jpeg';
+
+      const aiResult = await analyzeImageWithEdgeFunction(base64Data, mimeType);
+
+      if (aiResult) {
+        if (aiResult.brand) document.getElementById('new-item-brand').value = aiResult.brand;
+        if (aiResult.category) document.getElementById('new-item-category').value = aiResult.category;
+        if (aiResult.sub_category) document.getElementById('new-item-sub-category').value = aiResult.sub_category;
+        if (aiResult.warmth_level) document.getElementById('new-item-warmth').value = aiResult.warmth_level;
+
+        statusEl.innerText = "✨ AI har udfyldt felterne automatisk! Tjek og gem.";
+        statusEl.style.color = "var(--secondary)";
+      } else {
+        statusEl.innerText = "⚠️ AI kunne ikke tyde tøjet helt. Udfyld venligst manuelt.";
+        statusEl.style.color = "var(--text-muted)";
+      }
+    } catch (err) {
+      console.error("AI-analyse fejl:", err);
+      statusEl.innerText = "⚠️ AI-analyse mislykkedes (tjek Edge Function). Udfyld manuelt.";
+      statusEl.style.color = "var(--text-muted)";
+    }
   };
 
   reader.readAsDataURL(file);
+}
+
+// Kald Supabase Edge Function
+async function analyzeImageWithEdgeFunction(base64Image, mimeType) {
+  const functionUrl = `${SUPABASE_URL}/functions/v1/analyze-clothing`;
+
+  const response = await fetch(functionUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({
+      base64Image: base64Image,
+      mimeType: mimeType
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Edge Function HTTP fejl! Status: ${response.status}`);
+  }
+
+  return await response.json();
 }
 
 async function saveNewItemToSupabase() {
@@ -591,7 +639,7 @@ async function saveNewItemToSupabase() {
 
     if (error) {
       console.error("Fejl ved gem af tøj:", error);
-      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet. Tjek RLS-rettigheder.";
+      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet. Tjek SQL RLS i Supabase.";
       statusEl.style.color = "var(--danger)";
     } else {
       statusEl.innerText = "✅ Tøj blev gemt i dit klædeskab!";
@@ -639,7 +687,7 @@ async function sendFeedback() {
   }
 }
 
-// 7. Ønskeseddel Generator
+// 7. Ønskeseddel
 function generateWishlist() {
   const suggestions = [
     { title: "🔥 Varm Merino Uld Baselayer", reason: "Godt supplement til de koldeste måneder." },
