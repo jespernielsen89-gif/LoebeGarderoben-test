@@ -62,8 +62,17 @@
         <label for="garmin-file-input">📁 Importér GPX-rute (f.eks. fra Garmin):</label>
         <input type="file" id="garmin-file-input" accept=".gpx">
         <button id="btn-parse-garmin" class="btn outline small" style="margin-top: 5px;">Analyser GPX</button>
+        
         <div id="garmin-result" class="hidden" style="font-size: 0.9rem; margin-top: 8px; color: var(--secondary);">
           📍 Længde: <span id="g-distance">0</span> km | <span id="g-time"></span>
+        </div>
+
+        <!-- Rute Visualisering / Kort SVG -->
+        <div id="route-map-container" class="hidden" style="margin-top: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; padding: 10px; text-align: center;">
+          <svg id="route-svg" viewBox="0 0 300 150" style="width: 100%; max-height: 150px; stroke: #2563eb; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;">
+            <path id="route-path" d="" />
+          </svg>
+          <p id="route-summary-text" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;"></p>
         </div>
       </div>
 
@@ -111,7 +120,6 @@
         <!-- Løber Avatar Visualisering -->
         <div id="runner-avatar-container" class="avatar-container hidden">
           <svg id="runner-svg" viewBox="0 0 100 120" width="80" height="100">
-            <!-- Hoved & Krop -->
             <circle cx="50" cy="20" r="10" fill="#cbd5e1" />
             <path id="svg-hat" class="hidden" d="M 38 15 Q 50 5 62 15 Z" fill="#e11d48" />
             <rect id="svg-torso" x="35" y="32" width="30" height="40" rx="5" fill="#2563eb" />
@@ -142,19 +150,18 @@
     <section class="card">
       <h2>3. Dit Klædeskab</h2>
       
-      <!-- Tilføj nyt tøj via AI -->
+      <!-- Tilføj nyt tøj via AI (Optimeret mod sort skærm på iPhone) -->
       <div class="add-item-box" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
         <h3>📸 Tilføj nyt tøj med AI</h3>
         <div class="input-group">
-          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+          <input type="file" id="camera-input" accept="image/*" style="display:none;">
           <input type="file" id="gallery-input" accept="image/*" style="display:none;">
-          <button class="btn outline" onclick="document.getElementById('camera-input').click()">📷 Tag billede</button>
-          <button class="btn outline" onclick="document.getElementById('gallery-input').click()">🖼️ Vælg fra galleri</button>
+          <button class="btn outline" onclick="document.getElementById('camera-input').click()">📷 Tag billede / Vælg foto</button>
         </div>
 
         <div id="image-upload-preview-container" class="hidden" style="margin-top: 10px;">
-          <img id="image-preview" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 6px;">
-          <p id="upload-status" style="font-size: 0.9rem; color: var(--accent);">Klargør billede...</p>
+          <img id="image-preview" src="" alt="Preview" style="max-width: 120px; max-height: 120px; border-radius: 6px; object-fit: cover;">
+          <p id="upload-status" style="font-size: 0.9rem; color: var(--accent); margin-top: 5px;">Klargør billede...</p>
           
           <div class="manual-form" style="margin-top: 10px;">
             <input type="text" id="new-item-brand" placeholder="Brand (f.eks. Fusion, Nike)" style="width: 100%; margin-bottom: 5px; padding: 6px;">
