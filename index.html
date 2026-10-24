@@ -154,8 +154,12 @@
           <p id="layer-outer">Ingen anbefaling endnu</p>
         </div>
         <div class="layer-card">
-          <h4>🩳 Ben & Tilbehør</h4>
-          <p id="layer-extra">Ingen anbefaling endnu</p>
+          <h4>🩳 Ben (Underdel)</h4>
+          <p id="layer-legs">Ingen anbefaling endnu</p>
+        </div>
+        <div class="layer-card">
+          <h4>🧢 Tilbehør (Halsedisse, Hue, Handsker)</h4>
+          <p id="layer-accessories">Ikke nødvendigt i dag</p>
         </div>
 
         <!-- Feedback Sektion -->
@@ -180,12 +184,10 @@
         <button id="btn-wishlist" class="btn outline small">🎁 Generer Ønskeseddel</button>
       </div>
 
-      <!-- Kamera & Billede-upload Sektion (Enten / Eller) -->
       <div class="add-item-box margin-top">
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Tilføj nyt løbetøj:</p>
         
         <div class="form-row">
-          <!-- Knap 1: Tag billede direkte med kamera -->
           <div class="half" style="position: relative; overflow: hidden;">
             <input type="file" id="camera-input" accept="image/*" capture="environment" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:10;">
             <button type="button" class="btn primary small" style="pointer-events: none; width: 100%;">
@@ -193,7 +195,6 @@
             </button>
           </div>
 
-          <!-- Knap 2: Vælg eksisterende fra galleri -->
           <div class="half" style="position: relative; overflow: hidden;">
             <input type="file" id="gallery-input" accept="image/*" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:10;">
             <button type="button" class="btn outline small" style="pointer-events: none; width: 100%;">
@@ -202,7 +203,6 @@
           </div>
         </div>
 
-        <!-- Preview & Tilføj Formular -->
         <div id="image-upload-preview-container" class="margin-top hidden" style="position: relative; z-index: 20;">
           <div style="text-align: center;">
             <img id="image-preview" src="" alt="Preview af tøj" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border);" />
@@ -224,7 +224,7 @@
             </div>
             <div class="form-group half">
               <label for="new-item-sub-category">Underkategori</label>
-              <input type="text" id="new-item-sub-category" placeholder="F.eks. Tights, Jakke..." />
+              <input type="text" id="new-item-sub-category" placeholder="F.eks. Tights, Jakke, Halsedisse..." />
             </div>
           </div>
 
