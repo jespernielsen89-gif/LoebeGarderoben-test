@@ -1,6 +1,7 @@
 // === CONFIGURATION ===
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1eGp1a2dqd3ZzdWlzbWJmYW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwMDAwMDAsImV4cCI6MjA2NTc2MDAwMH0.eyJpc3MiOiJzdXBhYmFzZS"; // Indsæt hele din rigtige anon nøgle fra billedet her
+// Indsæt din klassiske anon nøgle (starter med eyJ...) herunder:
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1eGp1a2dqd3ZzdWlzbWJmYW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwMDAwMDAsImV4cCI6MjA2NTc2MDAwMH0.eyJpc3MiOiJzdXBhYmFzZS";
 
 // Opret Supabase-klient
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -521,7 +522,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-// 5. Klædeskab
+// 5. Klædeskab (Bruger præcist 'user_wardrobe' uden mellemrum)
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
