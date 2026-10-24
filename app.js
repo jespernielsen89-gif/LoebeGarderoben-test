@@ -1,6 +1,6 @@
-// === CONFIGURATION ===
+// === CONFIGURATION (LøbeGarderoben v4.1) ===
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1eGp1a2dqd3ZzdWlzbWJmYW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMDA1ODQsImV4cCI6MjEwNzg3NjU4NH0.4gApKVJAKmsk5OUEOiob9iV0y6T_aU84HJMLcWkoM9M";
+const SUPABASE_ANON_KEY = "INDSET_DIN_FULDE_ANON_NOEGLE_HER";
 
 // Opret Supabase-klient
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -18,6 +18,19 @@ async function initApp() {
   await loadWardrobe();
   setupEventListeners();
   getLocationWeather();
+}
+
+// Toast Notifikationssystem
+function showToast(message, duration = 2500) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  
+  toast.innerText = message;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
 }
 
 function setupEventListeners() {
@@ -111,7 +124,7 @@ function getLocationWeather() {
 async function searchCityWeather() {
   const cityName = document.getElementById('city-search').value.trim();
   if (!cityName || cityName.includes("GPS")) {
-    alert("Indtast venligst et gyldigt bynavn.");
+    showToast("Indtast venligst et gyldigt bynavn.");
     return;
   }
   await searchCityWeatherFallback(cityName);
@@ -125,7 +138,7 @@ async function searchCityWeatherFallback(cityName) {
     const data = await res.json();
 
     if (!data.results || data.results.length === 0) {
-      alert("Kunne ikke finde byen.");
+      showToast("Kunne ikke finde byen.");
       return;
     }
 
@@ -133,7 +146,7 @@ async function searchCityWeatherFallback(cityName) {
     document.getElementById('city-search').value = `${location.name} (${location.country || ''})`;
     fetchWeather(location.latitude, location.longitude);
   } catch (e) {
-    alert("Fejl ved søgning efter by.");
+    showToast("Fejl ved søgning efter by.");
   }
 }
 
@@ -190,7 +203,7 @@ async function fetchWeather(lat, lon) {
     document.getElementById('weather-info').classList.remove('hidden');
 
   } catch (e) {
-    alert("Fejl ved hentning af vejrdata.");
+    showToast("Fejl ved hentning af vejrdata.");
   }
 }
 
@@ -214,7 +227,7 @@ function renderSmartTips(isDay, uv, wind, rainProb) {
 function handleGarminUpload() {
   const fileInput = document.getElementById('garmin-file-input');
   if (!fileInput || fileInput.files.length === 0) {
-    alert("Vælg venligst en .gpx fil først.");
+    showToast("Vælg venligst en .gpx fil først.");
     return;
   }
 
@@ -226,7 +239,7 @@ function handleGarminUpload() {
     if (file.name.toLowerCase().endsWith('.gpx')) {
       parseGpxContent(content, file.name);
     } else {
-      alert("Upload venligst en .gpx fil.");
+      showToast("Upload venligst en .gpx fil.");
     }
   };
   reader.readAsText(file);
@@ -252,7 +265,7 @@ function parseGpxContent(gpxText, fileName) {
     if (trackPoints.length === 0) trackPoints = xmlDoc.getElementsByTagName('trkpt');
 
     if (trackPoints.length === 0) {
-      alert("Ingen punkter fundet i GPX-filen.");
+      showToast("Ingen punkter fundet i GPX-filen.");
       return;
     }
 
@@ -329,11 +342,11 @@ function parseGpxContent(gpxText, fileName) {
       fetchWeather(coords[0].lat, coords[0].lon);
     }
 
-    alert(`📍 GPX Rute Indlæst (${totalDistanceKm.toFixed(2)} km)\nRute-miljø forudfyldt baseret på kystnærhed.`);
+    showToast(`📍 GPX Indlæst: ${totalDistanceKm.toFixed(2)} km`);
 
   } catch (err) {
     console.error(err);
-    alert("Fejl ved læsning af GPX-fil.");
+    showToast("Fejl ved læsning af GPX-fil.");
   }
 }
 
@@ -391,12 +404,12 @@ function getIdealWarmth(temp) {
 // 4. Automatisk Outfit-Matching
 function generateAutomaticOutfit() {
   if (!currentWeatherData) {
-    alert("Hent venligst vejret først!");
+    showToast("Hent venligst vejret først!");
     return;
   }
 
   if (!wardrobeData || wardrobeData.length === 0) {
-    alert("Henter klædeskab... Prøv igen om et øjeblik.");
+    showToast("Henter klædeskab...");
     loadWardrobe();
     return;
   }
@@ -465,7 +478,10 @@ function generateAutomaticOutfit() {
   }
 
   updateRunnerAvatar(baseLayer, midLayer, outerLayer);
-  document.getElementById('outfit-result').classList.remove('hidden');
+  
+  const outfitBox = document.getElementById('outfit-result');
+  outfitBox.classList.remove('hidden');
+  outfitBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function findBestItemAny(items, keywords, targetTemp) {
@@ -510,7 +526,7 @@ function updateRunnerAvatar(baseLayer, midLayer, outerLayer) {
   }
 }
 
-// 5. Klædeskab (Bruger 'user_wardrobe')
+// 5. Klædeskab
 async function loadWardrobe() {
   const { data, error } = await db.from('user_wardrobe').select('*');
   if (!error && data) {
@@ -548,6 +564,7 @@ function renderWardrobe(items) {
 async function toggleWash(id, status) {
   await db.from('user_wardrobe').update({ in_wash: status }).eq('id', id);
   await loadWardrobe();
+  showToast(status ? "🧺 Markeret som til vask" : "✅ Markeret som rent");
 }
 
 function filterWardrobe(filter) {
@@ -566,16 +583,13 @@ async function handleImageUpload(event) {
   if (!file) return;
 
   const previewImg = document.getElementById('image-preview');
-  const statusEl = document.getElementById('upload-status');
-
   const reader = new FileReader();
 
   reader.onload = async function(e) {
     previewImg.src = e.target.result;
     document.getElementById('image-upload-preview-container').classList.remove('hidden');
     
-    statusEl.innerText = "🤖 Gemini AI analyserer tøjet...";
-    statusEl.style.color = "var(--accent)";
+    showToast("🤖 AI analyserer tøjet...");
 
     try {
       const base64Data = e.target.result.split(',')[1];
@@ -589,16 +603,13 @@ async function handleImageUpload(event) {
         if (aiResult.sub_category) document.getElementById('new-item-sub-category').value = aiResult.sub_category;
         if (aiResult.warmth_level) document.getElementById('new-item-warmth').value = aiResult.warmth_level;
 
-        statusEl.innerText = "✨ AI har udfyldt felterne automatisk! Tjek og gem.";
-        statusEl.style.color = "var(--secondary)";
+        showToast("✨ AI har udfyldt felterne!");
       } else {
-        statusEl.innerText = "⚠️ AI kunne ikke tyde tøjet helt. Udfyld venligst manuelt.";
-        statusEl.style.color = "var(--text-muted)";
+        showToast("⚠️ AI kunne ikke tyde tøjet helt.");
       }
     } catch (err) {
       console.error("AI-analyse fejl:", err);
-      statusEl.innerText = "⚠️ AI-analyse mislykkedes (tjek Edge Function). Udfyld manuelt.";
-      statusEl.style.color = "var(--text-muted)";
+      showToast("⚠️ AI-analyse mislykkedes.");
     }
   };
 
@@ -633,10 +644,8 @@ async function saveNewItemToSupabase() {
   const category = document.getElementById('new-item-category').value;
   const subCategory = document.getElementById('new-item-sub-category').value.trim() || 'Løbetøj';
   const warmthLevel = parseInt(document.getElementById('new-item-warmth').value) || 3;
-  const statusEl = document.getElementById('upload-status');
 
-  statusEl.innerText = "Gemmer nyt tøj i Supabase...";
-  statusEl.style.color = "var(--text-muted)";
+  showToast("Gemmer i Supabase...");
 
   try {
     const { data, error } = await db
@@ -653,24 +662,21 @@ async function saveNewItemToSupabase() {
 
     if (error) {
       console.error("Fejl ved gem af tøj:", error);
-      statusEl.innerText = "❌ Fejl: Kunne ikke gemme tøjet.";
-      statusEl.style.color = "var(--danger)";
+      showToast("❌ Fejl: Kunne ikke gemme.");
     } else {
-      statusEl.innerText = "✅ Tøj blev gemt i dit klædeskab!";
-      statusEl.style.color = "var(--secondary)";
+      showToast("✅ Tøj gemt i klædeskabet!");
 
       setTimeout(() => {
         document.getElementById('image-upload-preview-container').classList.add('hidden');
         document.getElementById('camera-input').value = '';
         document.getElementById('gallery-input').value = '';
-      }, 1500);
+      }, 1000);
 
       await loadWardrobe();
     }
   } catch (e) {
     console.error("Exception:", e);
-    statusEl.innerText = "❌ Systemfejl ved gem af tøj.";
-    statusEl.style.color = "var(--danger)";
+    showToast("❌ Systemfejl ved gem.");
   }
 }
 
@@ -678,7 +684,7 @@ async function saveNewItemToSupabase() {
 async function sendFeedback() {
   const selectedBtn = document.querySelector('.btn-fb[data-selected="true"]');
   if (!selectedBtn) {
-    alert("Vælg venligst en bedømmelse.");
+    showToast("Vælg venligst en bedømmelse.");
     return;
   }
 
@@ -691,13 +697,10 @@ async function sendFeedback() {
     comment
   }]);
 
-  const statusEl = document.getElementById('fb-status');
   if (!error) {
-    statusEl.innerText = "Tak! Din feedback er gemt.";
-    statusEl.style.color = "var(--secondary)";
+    showToast("Tak! Din feedback er gemt. 🎯");
   } else {
-    statusEl.innerText = "Fejl ved lagring.";
-    statusEl.style.color = "var(--danger)";
+    showToast("Fejl ved gem af feedback.");
   }
 }
 
@@ -719,5 +722,5 @@ function generateWishlist() {
   }
 
   const modal = document.getElementById('wishlist-modal');
-  if (modal) modal.classList.open = modal.classList.remove('hidden');
+  if (modal) modal.classList.remove('hidden');
 }
