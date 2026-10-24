@@ -3,29 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LøbeGarderoben v4.0</title>
+  <title>LøbeGarderoben v4.1</title>
   
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=4.0">
+  <link rel="stylesheet" href="styles.css?v=4.1">
 </head>
 <body>
 
   <div class="container">
     <header>
-      <h1>🏃‍♂️ LøbeGarderoben v4.0</h1>
+      <h1>🏃‍♂️ LøbeGarderoben v4.1</h1>
       <p class="subtitle">Intelligent påklædning til din løbetur</p>
     </header>
 
-    <!-- Vejr & Lokation Sektion -->
+    <!-- TRIN 1: Tid & Lokation -->
     <section class="card">
-      <h2>1. Vælg tid og lokation</h2>
+      <h2>1. Hvor og hvornår vil du løbe?</h2>
       <div class="input-group">
         <input type="text" id="city-search" placeholder="Indtast by (f.eks. Fredericia)...">
         <button id="btn-search-city" class="btn primary">Søg</button>
-        <button id="btn-location" class="btn outline">📍 Brug GPS</button>
+        <button id="btn-location" class="btn outline">📍 GPS</button>
       </div>
 
       <div class="input-group" style="margin-top: 12px;">
@@ -41,8 +41,13 @@
           <option value="24">Om 24 timer (+24t)</option>
         </select>
       </div>
+    </section>
 
-      <div class="input-group" style="margin-top: 12px;">
+    <!-- TRIN 2: Rute & Vejroverblik (Opdelt) -->
+    <section class="card">
+      <h2>2. Rute & Vejroverblik</h2>
+      
+      <div class="input-group">
         <label for="route-environment">Rute-miljø:</label>
         <select id="route-environment" class="select-field">
           <option value="sheltered">Læ / By / Skov</option>
@@ -57,7 +62,7 @@
         </select>
       </div>
 
-      <!-- Garmin / GPX Upload -->
+      <!-- GPX Import -->
       <div class="gpx-upload-box" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; display: block; width: 100%;">
         <label for="garmin-file-input">📁 Importér GPX-rute (f.eks. fra Garmin):</label>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 5px;">
@@ -65,12 +70,12 @@
           <button id="btn-parse-garmin" class="btn outline small">Analyser GPX</button>
         </div>
         
-        <div id="garmin-result" class="hidden" style="font-size: 0.9rem; margin-top: 8px; color: var(--secondary);">
+        <div id="garmin-result" class="hidden fade-in-section" style="font-size: 0.9rem; margin-top: 8px; color: var(--secondary);">
           📍 Længde: <span id="g-distance">0</span> km | <span id="g-time"></span>
         </div>
 
-        <!-- Rute Visualisering / Kort SVG (Låst fast på egen række) -->
-        <div id="route-map-container" class="hidden" style="clear: both; width: 100%; margin-top: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; box-sizing: border-box;">
+        <!-- Rute Kort Visualisering -->
+        <div id="route-map-container" class="hidden fade-in-section" style="clear: both; width: 100%; margin-top: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; box-sizing: border-box;">
           <svg id="route-svg" viewBox="0 0 300 150" style="width: 100%; height: 140px; stroke: #2563eb; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; display: block; margin: 0 auto;">
             <path id="route-path" d="" />
           </svg>
@@ -78,12 +83,12 @@
         </div>
       </div>
 
-      <!-- Vejr Resultater -->
-      <div id="weather-info" class="weather-box hidden" style="margin-top: 15px;">
+      <!-- Vejr Hero Box -->
+      <div id="weather-info" class="weather-box hidden fade-in-section" style="margin-top: 15px;">
         <div class="weather-main">
-          <span id="weather-temp" class="temp">--°C</span>
+          <span id="weather-temp" class="weather-hero-temp">--°C</span>
           <div>
-            <div id="weather-desc" class="desc">Henter vejr...</div>
+            <div id="weather-desc" class="desc" style="font-weight: 600;">Henter vejr...</div>
             <div id="weather-sub" class="sub">Vind: -- | Regn: --</div>
           </div>
         </div>
@@ -95,9 +100,9 @@
       </div>
     </section>
 
-    <!-- Generer Outfit Sektion -->
+    <!-- TRIN 3: Outfit-Anbefaling -->
     <section class="card">
-      <h2>2. Dagens Outfit-anbefaling</h2>
+      <h2>3. Dagens Outfit-anbefaling</h2>
       <div class="input-group">
         <label for="sensitivity">Temperatur-følsomhed:</label>
         <select id="sensitivity" class="select-field">
@@ -106,11 +111,10 @@
           <option value="varm">Sveder let (+3°C kompensation)</option>
         </select>
       </div>
-      <button id="btn-generate" class="btn primary full" style="margin-top: 15px;">✨ Generer Outfit</button>
 
       <!-- Outfit Resultat -->
-      <div id="outfit-result" class="outfit-box hidden" style="margin-top: 15px;">
-        <h3>Anbefalede lag:</h3>
+      <div id="outfit-result" class="outfit-box hero-outfit-card hidden fade-in-section" style="margin-top: 15px;">
+        <h3 style="margin-top:0;">Anbefalede lag:</h3>
         <ul class="outfit-list">
           <li><strong>Inderlag (Base):</strong> <span id="layer-base">-</span></li>
           <li><strong>Mellemlag (Mid):</strong> <span id="layer-mid">-</span></li>
@@ -133,7 +137,7 @@
           <p id="avatar-status-text" class="avatar-text">Klar til løb</p>
         </div>
 
-        <!-- Feedback på outfit -->
+        <!-- Feedback -->
         <div class="feedback-section" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
           <p>Hvordan fungerede outfittet?</p>
           <div class="feedback-btns">
@@ -143,16 +147,14 @@
           </div>
           <input type="text" id="fb-comment" placeholder="Valgfri kommentar..." style="margin-top: 8px; width: 100%; padding: 6px;">
           <button id="btn-send-fb" class="btn secondary small" style="margin-top: 5px;">Gem Feedback</button>
-          <p id="fb-status" style="font-size: 0.85rem; margin-top: 5px;"></p>
         </div>
       </div>
     </section>
 
-    <!-- Klædeskab Sektion -->
+    <!-- TRIN 4: Klædeskab -->
     <section class="card">
-      <h2>3. Dit Klædeskab</h2>
+      <h2>4. Dit Klædeskab</h2>
       
-      <!-- Tilføj nyt tøj via AI (Optimeret mod sort skærm på iPhone) -->
       <div class="add-item-box" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
         <h3>📸 Tilføj nyt tøj med AI</h3>
         <div class="input-group">
@@ -161,9 +163,8 @@
           <button class="btn outline" onclick="document.getElementById('camera-input').click()">📷 Tag billede / Vælg foto</button>
         </div>
 
-        <div id="image-upload-preview-container" class="hidden" style="margin-top: 10px;">
+        <div id="image-upload-preview-container" class="hidden fade-in-section" style="margin-top: 10px;">
           <img id="image-preview" src="" alt="Preview" style="max-width: 120px; max-height: 120px; border-radius: 6px; object-fit: cover;">
-          <p id="upload-status" style="font-size: 0.9rem; color: var(--accent); margin-top: 5px;">Klargør billede...</p>
           
           <div class="manual-form" style="margin-top: 10px;">
             <input type="text" id="new-item-brand" placeholder="Brand (f.eks. Fusion, Nike)" style="width: 100%; margin-bottom: 5px; padding: 6px;">
@@ -198,6 +199,14 @@
     </section>
   </div>
 
+  <!-- Sticky Bottom Bar (Thumb Friendly CTA) -->
+  <div class="sticky-bottom-bar">
+    <button id="btn-generate" class="btn primary full">✨ Generer Outfit</button>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast"></div>
+
   <!-- Modal til Ønskeseddel -->
   <div id="wishlist-modal" class="modal hidden">
     <div class="modal-content">
@@ -208,6 +217,6 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=4.0"></script>
+  <script src="app.js?v=4.1"></script>
 </body>
 </html>
