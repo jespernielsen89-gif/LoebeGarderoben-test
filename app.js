@@ -1,8 +1,8 @@
 // === CONFIGURATION ===
 const SUPABASE_URL = "https://quxjukgjwvsuismbfaof.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable__8-ZIhx5r9eKFwbliCJyNQ_Fexy6WA4";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1eGp1a2dqd3ZzdWlzbWJmYW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwMDAwMDAsImV4cCI6MjA2NTc2MDAwMH0.eyJpc3MiOiJzdXBhYmFzZS"; // Indsæt hele din rigtige anon nøgle fra billedet her
 
-// Opret Supabase-klient rent med den nye publishable key
+// Opret Supabase-klient
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentWeatherData = null;
