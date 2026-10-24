@@ -58,21 +58,23 @@
       </div>
 
       <!-- Garmin / GPX Upload -->
-      <div class="gpx-upload-box" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+      <div class="gpx-upload-box" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; display: block; width: 100%;">
         <label for="garmin-file-input">📁 Importér GPX-rute (f.eks. fra Garmin):</label>
-        <input type="file" id="garmin-file-input" accept=".gpx">
-        <button id="btn-parse-garmin" class="btn outline small" style="margin-top: 5px;">Analyser GPX</button>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 5px;">
+          <input type="file" id="garmin-file-input" accept=".gpx">
+          <button id="btn-parse-garmin" class="btn outline small">Analyser GPX</button>
+        </div>
         
         <div id="garmin-result" class="hidden" style="font-size: 0.9rem; margin-top: 8px; color: var(--secondary);">
           📍 Længde: <span id="g-distance">0</span> km | <span id="g-time"></span>
         </div>
 
-        <!-- Rute Visualisering / Kort SVG -->
-        <div id="route-map-container" class="hidden" style="margin-top: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; padding: 10px; text-align: center;">
-          <svg id="route-svg" viewBox="0 0 300 150" style="width: 100%; max-height: 150px; stroke: #2563eb; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;">
+        <!-- Rute Visualisering / Kort SVG (Låst fast på egen række) -->
+        <div id="route-map-container" class="hidden" style="clear: both; width: 100%; margin-top: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; box-sizing: border-box;">
+          <svg id="route-svg" viewBox="0 0 300 150" style="width: 100%; height: 140px; stroke: #2563eb; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; display: block; margin: 0 auto;">
             <path id="route-path" d="" />
           </svg>
-          <p id="route-summary-text" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;"></p>
+          <p id="route-summary-text" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;"></p>
         </div>
       </div>
 
